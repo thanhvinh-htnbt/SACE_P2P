@@ -19,6 +19,7 @@ import { BrokenWall } from '../Player/TurtleAgent';
 import { BreakableWallView } from '../Maze/BreakableWallView';
 import { PointItemAnimator } from '../Maze/PointItemAnimator';
 import { StartRun } from './StartRun';
+import { GameAudio } from './GameAudio';
 import { TurtleFrameAnimator } from '../Player/TurtleFrameAnimator';
 const { ccclass, property } = _decorator;
 
@@ -51,6 +52,7 @@ export class GameBootstrap extends Component {
     private isReady = false;
 
     onLoad() {
+        GameAudio.ensure();
         StartRun.eventTarget.on('start-run', this.onStartRun, this);
         TurnManager.eventTarget.on('turtle-moved', this.onTurtleMoved, this);
         TurnManager.eventTarget.on('walls-broken', this.onWallsBroken, this);

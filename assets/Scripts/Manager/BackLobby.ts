@@ -1,4 +1,5 @@
 import { _decorator, Button, Component, director } from 'cc';
+import { GameAudio } from './GameAudio';
 const { ccclass, property } = _decorator;
 
 @ccclass('BackLobby')
@@ -14,6 +15,7 @@ export class BackLobby extends Component {
     }
 
     backToLobby() {
+        GameAudio.playClick();
         director.loadScene(this.sceneName);
     }
 }

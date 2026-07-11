@@ -2,7 +2,7 @@ import { _decorator, Component, director, instantiate, JsonAsset, Node, Prefab, 
 import { Inventory, ItemType, MazeLevelData } from '../Maze/MazeData';
 import { Dir } from '../Maze/MazeConstants';
 import { DraggableItem, InventoryItemKind, ItemDropRequest } from './DraggableItem';
-import { TurnManager } from './TurnManager';
+import { TurnManager, TurnPhase } from './TurnManager';
 const { ccclass, property } = _decorator;
 
 @ccclass('ItemSpace')
@@ -19,10 +19,19 @@ export class ItemSpace extends Component {
 
     onEnable() {
         DraggableItem.events.on('drop', this.onItemDrop, this);
+        TurnManager.eventTarget.on('phase-changed', this.onPhaseChanged, this);
     }
 
     onDisable() {
         DraggableItem.events.off('drop', this.onItemDrop, this);
+        TurnManager.eventTarget.off('phase-changed', this.onPhaseChanged, this);
+    }
+
+    private onPhaseChanged(phase: TurnPhase) {
+        const canEdit = phase === TurnPhase.PlacingItem;
+        for (const draggable of this.node.getComponentsInChildren(DraggableItem)) {
+            draggable.enabled = canEdit;
+        }
     }
 
     start() {

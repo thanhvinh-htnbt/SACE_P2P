@@ -81,7 +81,7 @@
     "__prefab": null,
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 220,
+      "width": 260,
       "height": 90
     },
     "_anchorPoint": {
@@ -106,9 +106,9 @@
     "_dstBlendFactor": 4,
     "_color": {
       "__type__": "cc.Color",
-      "r": 169,
-      "g": 68,
-      "b": 66,
+      "r": 255,
+      "g": 166,
+      "b": 58,
       "a": 255
     },
     "_spriteFrame": {
@@ -272,7 +272,7 @@
       "b": 255,
       "a": 255
     },
-    "_string": "Start",
+    "_string": "START",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
     "_actualFontSize": 38,

@@ -98,6 +98,7 @@ export class TurnManager extends Component {
                 TurnManager.eventTarget.emit('turtle-moved', {
                     ...this.state,
                     isFlowMove: move.isFlowMove,
+                    destinationIsFlow: this.isCurrentCellFlow(),
                     consumesStep: move.consumesStep,
                     brokenWalls: move.brokenWalls,
                 });
@@ -160,6 +161,11 @@ export class TurnManager extends Component {
         if (remain <= 0) {
             this.endGame(false, 'out-of-steps');
         }
+    }
+
+    private isCurrentCellFlow(): boolean {
+        const index = this.state.turtleRow * this.data.cols + this.state.turtleCol;
+        return this.data.cells[index]?.flow !== undefined;
     }
 
     private getRemain(): number {
