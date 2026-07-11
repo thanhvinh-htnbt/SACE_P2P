@@ -18,7 +18,7 @@ import { ItemType, MazeLevelData } from '../Maze/MazeData';
 import { BrokenWall } from '../Player/TurtleAgent';
 import { BreakableWallView } from '../Maze/BreakableWallView';
 import { PointItemAnimator } from '../Maze/PointItemAnimator';
-import { BoardBtnNumber } from './BoardBtnNumber';
+import { StartRun } from './StartRun';
 import { TurtleFrameAnimator } from '../Player/TurtleFrameAnimator';
 const { ccclass, property } = _decorator;
 
@@ -51,14 +51,13 @@ export class GameBootstrap extends Component {
     private isReady = false;
 
     onLoad() {
-        // Board phát số bước; TurnManager phát vị trí mới của rùa.
-        BoardBtnNumber.eventTarget.on('go', this.onGo, this);
+        StartRun.eventTarget.on('start-run', this.onStartRun, this);
         TurnManager.eventTarget.on('turtle-moved', this.onTurtleMoved, this);
         TurnManager.eventTarget.on('walls-broken', this.onWallsBroken, this);
     }
 
     onDestroy() {
-        BoardBtnNumber.eventTarget.off('go', this.onGo, this);
+        StartRun.eventTarget.off('start-run', this.onStartRun, this);
         TurnManager.eventTarget.off('turtle-moved', this.onTurtleMoved, this);
         this.turtleAnimator?.stop();
         TurnManager.eventTarget.off('walls-broken', this.onWallsBroken, this);
@@ -113,12 +112,9 @@ export class GameBootstrap extends Component {
         });
     }
 
-    // Mỗi lần bấm Go: bỏ qua phase đặt item ở bản test và cho rùa đi số bước đã nhập.
-    private onGo(steps: number) {
+    private onStartRun() {
         if (!this.isReady || !this.turnManager) return;
-
-        this.turnManager.confirmPlacement();
-        void this.turnManager.chooseSteps(steps);
+        void this.turnManager.runAutomatically();
     }
 
     // State chỉ giữ row/col; view đổi row/col thành tọa độ thật của prefab map.

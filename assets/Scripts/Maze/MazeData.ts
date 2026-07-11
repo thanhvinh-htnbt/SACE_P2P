@@ -24,8 +24,11 @@ export interface CellData {
 }
 
 export interface WinCondition {
-    targetScore: number;   // số điểm cần ăn đủ
-    maxSteps: number;      // số bước tối đa được phép đi hết
+    maxSteps: number;      // phải tới đích khi remain = maxSteps - stepsUsed > 0
+}
+
+export interface RatingConfig {
+    bestCase: number;      // performance tốt nhất dự kiến: remain + pointCollected
 }
 
 /** Số item người chơi được cấp đầu màn để tự đặt trong lúc chơi. */
@@ -44,5 +47,6 @@ export interface MazeLevelData {
     goal: { row: number; col: number };
     cells: CellData[];
     winCondition: WinCondition;
+    rating: RatingConfig;
     inventory: Inventory;
 }

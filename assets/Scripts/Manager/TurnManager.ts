@@ -9,8 +9,7 @@ const { ccclass } = _decorator;
 
 export enum TurnPhase {
     PlacingItem,   // người chơi đang đặt item
-    ChoosingSteps, // người chơi chọn số bước
-    TurtleMoving,  // rùa đang tự di chuyển, khóa input
+    TurtleMoving,  // rùa đang tự động di chuyển, khóa input
     GameEnded,
 }
 
@@ -42,6 +41,7 @@ export class TurnManager extends Component {
         this.state.facing = this.turtle.getNextDirection() ?? this.state.facing;
         this.phase = TurnPhase.PlacingItem;
         TurnManager.eventTarget.emit('state-changed', this.state);
+        TurnManager.eventTarget.emit('phase-changed', this.phase);
         return this.state;
     }
 
@@ -68,46 +68,28 @@ export class TurnManager extends Component {
         return true;
     }
 
-    // Người chơi xác nhận xong việc đặt item, chuyển sang chọn số bước
-    confirmPlacement() {
-        if (this.phase !== TurnPhase.PlacingItem) return;
-
-        this.phase = TurnPhase.ChoosingSteps;
-        TurnManager.eventTarget.emit('phase-changed', this.phase);
-    }
-
-    // Người chơi chọn số bước, bắt đầu rùa tự di chuyển
-    async chooseSteps(steps: number) {
-        if (this.phase !== TurnPhase.ChoosingSteps) return;
-        const requestedSteps = Math.floor(steps);
-        if (!Number.isFinite(requestedSteps) || requestedSteps <= 0) return;
-
+    // V2: sau khi bấm Start, rùa tự chạy tới đích, kẹt hoặc hết quỹ bước.
+    async runAutomatically() {
+        if (this.phase !== TurnPhase.PlacingItem || this.state.isMoving) return;
         this.phase = TurnPhase.TurtleMoving;
         this.state.isMoving = true;
         TurnManager.eventTarget.emit('phase-changed', this.phase);
 
-        const remainingSteps = Math.max(
-            0,
-            this.data.winCondition.maxSteps - this.state.stepsUsed,
-        );
-        const stepsToRun = Math.min(requestedSteps, remainingSteps);
         let isStuck = false;
-        let consumedSteps = 0;
         let consecutiveFreeActions = 0;
         const maxFreeActions = this.data.cells.length * 4;
 
-        while (consumedSteps < stepsToRun) {
-            if (this.state.isGameOver) break;
+        while (!this.state.isGameOver
+            && !this.isAtGoal()
+            && this.getRemain() > 0) {
 
-            const consumedBeforeMove = consumedSteps;
+            const stepsBeforeMove = this.state.stepsUsed;
             const moved = await this.turtle.step(async move => {
                 // Tính theo ô đích: vào/đi giữa Flow miễn phí, đáp xuống Land mới trừ 1.
                 if (move.consumesStep) {
                     this.state.stepsUsed++;
-                    consumedSteps++;
                 }
                 if (move.brokenWalls.length > 0) {
-                    this.pathfinder.recalculate();
                     TurnManager.eventTarget.emit('walls-broken', move.brokenWalls);
                 }
 
@@ -130,7 +112,7 @@ export class TurnManager extends Component {
             }
             if (this.isAtGoal()) break; // tới đích sớm hơn số bước đã chọn -> dừng
 
-            if (consumedSteps === consumedBeforeMove) {
+            if (this.state.stepsUsed === stepsBeforeMove) {
                 consecutiveFreeActions++;
                 if (consecutiveFreeActions >= maxFreeActions) {
                     console.warn('Free-move loop detected; turtle stopped');
@@ -150,11 +132,6 @@ export class TurnManager extends Component {
         }
 
         this.evaluateWinCondition();
-
-        if (!this.state.isGameOver) {
-            this.phase = TurnPhase.PlacingItem; // quay lại lượt tiếp theo
-            TurnManager.eventTarget.emit('phase-changed', this.phase);
-        }
     }
 
     private checkCellItem() {
@@ -172,25 +149,21 @@ export class TurnManager extends Component {
             && this.state.turtleCol === this.data.goal.col;
     }
 
-    // Kiểm tra đủ cả 3 điều kiện thắng
     private evaluateWinCondition() {
-        const { targetScore, maxSteps } = this.data.winCondition;
+        const remain = this.getRemain();
 
         if (this.isAtGoal()) {
-            const scoreOk = this.state.scoreCollected >= targetScore;
-            const stepsOk = this.state.stepsUsed <= maxSteps;
-
-            this.endGame(
-                scoreOk && stepsOk,
-                !scoreOk ? 'not-enough-score' : !stepsOk ? 'too-many-steps' : 'success',
-            );
+            this.endGame(remain > 0, remain > 0 ? 'success' : 'out-of-steps');
             return;
         }
 
-        // Chưa tới đích nhưng đã hết số bước cho phép -> thua
-        if (this.state.stepsUsed >= maxSteps) {
+        if (remain <= 0) {
             this.endGame(false, 'out-of-steps');
         }
+    }
+
+    private getRemain(): number {
+        return Math.max(0, this.data.winCondition.maxSteps - this.state.stepsUsed);
     }
 
     private endGame(isWin: boolean, reason: string) {
@@ -200,7 +173,19 @@ export class TurnManager extends Component {
         this.phase = TurnPhase.GameEnded;
 
         TurnManager.eventTarget.emit('phase-changed', this.phase);
-        TurnManager.eventTarget.emit('game-ended', { isWin, reason });
+        const remain = this.getRemain();
+        const pointCollected = this.state.scoreCollected;
+        const performanceScore = remain + pointCollected;
+        const bestCase = Math.max(1, this.data.rating?.bestCase ?? 1);
+        TurnManager.eventTarget.emit('game-ended', {
+            isWin,
+            reason,
+            remain,
+            pointCollected,
+            performanceScore,
+            bestCase,
+            ratingRatio: performanceScore / bestCase,
+        });
     }
 
     private delay(ms: number): Promise<void> {

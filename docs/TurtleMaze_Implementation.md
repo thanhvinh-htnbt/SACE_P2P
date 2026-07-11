@@ -1,5 +1,7 @@
 # 🐢 Turtle Maze — Implementation Notes (dev)
 
+> Core V2 đã được migration: không còn NumberBoard; luật thắng là `isAtGoal() && remain > 0`; điểm item không quyết định thắng. Performance được tính `remain + pointCollected` và so với `bestCase` trong từng JSON.
+
 > Phần kỹ thuật, tách khỏi [TurtleMaze_GameDesign.md](TurtleMaze_GameDesign.md) (doc design cho team).
 > Nội dung ở đây phục vụ code/implement — data format, mapping với code hiện tại, roadmap, và các câu hỏi còn mở.
 
@@ -41,6 +43,16 @@ export interface PhaseMutation {
     actions: MutationAction[];
 }
 
+// V2 — điểm không nằm trong điều kiện thắng.
+export interface WinCondition {
+    maxSteps: number;      // phải tới đích khi remain > 0
+}
+
+export interface RatingConfig {
+    bestCase: number;      // performance tốt nhất dự kiến của level
+    starRatios?: number[]; // tùy chọn, ví dụ ngưỡng tỉ lệ cho 1/2/3 sao
+}
+
 export interface MazeLevelData {
     levelId: string;
     rows: number;
@@ -49,7 +61,8 @@ export interface MazeLevelData {
     startFacing: Dir;                     // MỚI — hướng nhìn ban đầu
     goal: { row: number; col: number };
     cells: CellData[];
-    winCondition: WinCondition;           // { targetScore, maxSteps }
+    winCondition: WinCondition;           // { maxSteps }, không còn targetScore
+    rating: RatingConfig;                 // performanceScore / bestCase
     inventory: { wall: number; food: number; stepBonus: number };  // MỚI
     mutations: PhaseMutation[];           // MỚI
 }
@@ -61,8 +74,8 @@ export interface MazeLevelData {
 |---|---|
 | Kích thước | 6 hàng × 8 cột |
 | Legend | Icon Food = 1–7 điểm, `W` = Wall, `+XS` = cộng step, `↑→↓←` = ô dòng chảy |
-| `targetScore` | 5 *(draft)* |
 | `maxSteps` | 20 *(draft)* |
+| `rating.bestCase` | Designer tính từ completion/mastery route của level |
 | Inventory | 3 Wall, 2 Food(1đ) *(draft)* |
 | Dòng chảy | 1 đoạn dòng 3–4 ô, thẳng hoặc cong 1 khúc — màn dạy cơ chế |
 | Mutation | 1–2 mutation đơn giản (1 tường dựng sau pha 1) — màn dạy cơ chế |
@@ -96,7 +109,7 @@ export interface MazeLevelData {
 4. `LogicPutWall` từ chối cạnh ngoài biên, cạnh đã có Wall và Flow–Flow. `MazePathfinder.canPlaceWallSafely()` từ chối Wall làm mất đường tới đích.
 5. `ingame.scene` đã wire map tĩnh, rùa, `GameBootstrap`, `TurnManager`, ItemSpace, bộ chọn bước và HUD realtime.
 6. `GameBootstrap.tweenTurtle()` tween cả vị trí và hướng nhìn bằng `sineInOut`; sprite gốc nhìn xuống và góc quay được chuẩn hóa theo cung ngắn nhất. Tween thường `0.45s`, Flow `0.28s`; `TurnManager` chờ tương ứng `500ms`/`320ms` để tween không bị bước kế tiếp ngắt giữa chừng.
-7. `TurnManager.chooseSteps()` chạy cho tới khi đủ số lần `consumesStep`, không đếm lượt miễn phí Land → Flow / Flow → Flow. `BoardBtnNumber` nghe `turtle-moved` và chỉ giảm countdown khi `consumesStep = true`.
+7. `TurnManager.runAutomatically()` chạy tới đích/kẹt/hết remain; Land → Flow và Flow → Flow không giảm remain. `StartRun` thay thế toàn bộ NumberBoard.
 8. Khi `TurnManager.init()`, `TurtleAgent.getNextDirection()` chọn hướng mở hợp lệ đầu tiên tại ô start. `GameBootstrap.tweenInitialFacing()` tween sprite sang hướng đó trước lượt chạy đầu tiên.
 9. `ItemSpace.applySystemWallSize()` chỉ resize wall sau khi drop hợp lệ: từ preview `128×32` về cùng format wall tĩnh `8×128`; horizontal xoay `90°`, vertical `0°`.
 10. `GameBootstrap.loadPointItemFrames()` preload icon trong `resources/sprite/Item`; `spawnCellItems()` thay Sprite runtime theo mapping: `swim_float=1`, `shell=2`, `icecream=3`, `coconut=4`, `compass=5`, `snail=6`, `starfish=7`. Không còn `ValueLabel` hoặc background.
@@ -122,8 +135,8 @@ export interface MazeLevelData {
 
 ## 4. Câu hỏi mở (cần quyết định thêm / để playtest trả lời — không chặn dev)
 
-- Các con số màn 1 (`targetScore` 5, `maxSteps` 20, inventory 3W/2F) có cho độ khó hợp lý?
-- Ngưỡng sao 2 (dư ≥ 20% bước) có quá dễ/khó?
+- `maxSteps`, `bestCase` và inventory màn 1 có cho độ khó hợp lý?
+- Ngưỡng sao nên dùng tỉ lệ `performanceScore / bestCase` nào?
 - Trôi miễn phí có làm dòng chảy quá mạnh (người chơi chỉ chăm chăm dùng dòng)?
-- Có cần cap N bước mỗi pha để pacing mutation đều hơn không?
+- Có cần giới hạn thời gian chạy hoặc số lần retry để phục vụ rank không?
 - Mid-run mutation ("đang đi tường dựng lên") đưa vào từ level mấy?

@@ -1,234 +1,230 @@
-# 🐢 Turtle Maze — Game Design Document (v1.0)
+# Turtle Maze — Game Design V2
 
-> Thể loại: Puzzle / Auto-runner trong mê cung dạng ma trận, chơi theo **pha (phase/round)**.
-> Engine: **Cocos Creator** (TypeScript).
-> 🎯 **Theme cuộc thi: FLOW (dòng chảy)** — thể hiện qua cơ chế dòng nước cuốn rùa trôi theo (mục 6).
->
-> 📎 Phần kỹ thuật (data format, mapping code, roadmap, câu hỏi mở) tách riêng ở [TurtleMaze_Implementation.md](TurtleMaze_Implementation.md).
->
-> **3 core twist:**
-> 1. Người chơi **không điều khiển rùa trực tiếp** — rùa tự đi theo luật ưu tiên cố định. Người chơi **thiết kế lại mê cung bằng item** (Wall, Food, +Step) để "ép" rùa đi theo tuyến tối ưu.
-> 2. **Map biến đổi bất ngờ giữa các pha** — tường mất / tường dựng / dòng chảy đổi. Người chơi đoán được luật đi của rùa nhưng không đoán được map → phải liên tục thích nghi, tạo bất ngờ và dopamine 🎢.
-> 3. 🌊 **Dòng chảy trong map** — rùa bước vào ô nước là bị cuốn trôi theo hướng dòng do map design sẵn.
+> Trạng thái: định hướng thiết kế mới, ưu tiên chốt trải nghiệm trước khi sửa code.
 
----
+## 1. Vấn đề của thiết kế cũ
 
-## 1. Tổng quan
+Thiết kế cũ yêu cầu người chơi đồng thời:
 
-Rùa xuất phát tại một ô trong mê cung dạng ma trận (grid). Trên đường đi có đồ ăn (Food) để cộng điểm. Rùa di chuyển **hoàn toàn tự động**: tại ngã ba / ngã tư nó chọn hướng theo **độ ưu tiên cố định** mà người chơi nắm rõ luật.
+- dự đoán luật tự động của rùa;
+- đặt item đúng vị trí;
+- nhập số bước cho từng lượt;
+- tới đích;
+- ăn đủ điểm;
+- không vượt quá giới hạn bước;
+- xử lý thêm Flow và các loại wall đặc biệt.
 
-Trong map có các **dòng chảy** 🌊 — chuỗi ô nước có hướng. Rùa bước vào là bị **cuốn trôi theo dòng** cho tới khi ra khỏi dòng. Dòng chảy vừa là đường tắt, vừa là bẫy — tùy người chơi tận dụng.
+Mỗi cơ chế riêng lẻ đều có tiềm năng, nhưng khi xuất hiện cùng lúc chúng làm tăng tải nhận thức. Người chơi mới có thể thua mà không hiểu mình sai ở dự đoán đường đi, số bước, điểm, item hay giới hạn lượt.
 
-Một màn chơi diễn ra qua **nhiều pha**. Mỗi pha, người chơi đặt item và chọn số bước rùa đi. Rùa đi xong, **map bất ngờ biến đổi** rồi mới sang pha tiếp theo.
+V2 giảm số điều kiện bắt buộc và chuyển phần chiều sâu sang lựa chọn item cùng hệ thống xếp hạng.
 
-Gameplay = **đặt vật cản để tái cấu trúc mê cung** + **lợi dụng / né dòng chảy** + **thích nghi với map luôn biến động**. Không phải vẽ đường — mà là bẻ dòng.
+## 2. Tuyên bố sản phẩm
 
-### Điều kiện thắng (phải đủ cả 3)
+**Turtle Maze là game puzzle quan sát và can thiệp:** rùa tự chạy theo một luật công khai; người chơi dùng item để thay đổi môi trường, giúp rùa tới đích hoặc tạo một hành trình tối ưu hơn.
 
-| # | Điều kiện |
-|---|-----------|
-| 1 | Rùa **về tới đích** |
-| 2 | Rùa **ăn đủ số điểm yêu cầu** (`targetScore`) |
-| 3 | Rùa về đích với **tổng số bước (cộng dồn qua các pha) ≤ giới hạn** (`maxSteps`) |
+Game phục vụ hai động lực chơi khác nhau trên cùng một level:
 
-### Điều kiện thua
+1. **Người chơi thành tựu cơ bản:** chỉ cần đưa rùa tới đích khi `remain > 0` và tận hưởng cảm giác hoàn thành level.
+2. **Người chơi mastery/rank:** tối ưu đường đi, thu thập điểm và thể hiện năng lực qua sao, điểm số hoặc bảng xếp hạng.
 
-| Lý do | Mã (`reason` trong event `game-ended`) |
+Hai nhóm dùng cùng luật lõi. Người chơi không bị ép trở thành người chơi rank để được xem là đã thắng.
+
+## 3. Luật lõi V2
+
+### Rùa
+
+- Rùa tự động di chuyển sau khi người chơi bắt đầu lượt chạy.
+- Không còn NumberBoard và không nhập N bước theo lượt.
+- Ở mỗi ô, hướng ưu tiên là: **thẳng → phải → trái → quay đầu**.
+- Rùa tiếp tục chạy cho tới khi tới đích, bị kẹt hoặc gặp trạng thái kết thúc đặc biệt của level.
+- Flow vẫn tác động theo hướng được thiết kế trên map.
+
+### Điều kiện thắng
+
+Điều kiện thắng bắt buộc duy nhất là biểu thức kết hợp:
+
+> **Rùa tới đích VÀ số bước còn lại `remain > 0`.**
+
+Hai vế đều bắt buộc. Tới đích với `remain = 0` vẫn là thua.
+
+`targetScore` không còn là điều kiện thắng. Thiếu hoặc không ăn item điểm không biến một lần giải hợp lệ thành thất bại. `maxSteps` vẫn tạo giới hạn cho hành trình tự động; rùa phải về đích trước khi quỹ bước cạn.
+
+### Điểm và xếp hạng
+
+Điểm là lớp mastery tùy chọn:
+
+- item điểm có giá trị 1–7;
+- người chơi có thể thắng với 0 điểm nếu tới đích và còn bước;
+- người chơi muốn tối ưu phải chủ động bẻ đường để ăn nhiều item hơn mà vẫn tới đích;
+- UI sau màn phải tách rõ **Level Complete** và **Performance**.
+
+Điểm performance cuối màn được tính thống nhất:
+
+> **`performanceScore = remain + pointCollected`**
+
+Mỗi file JSON level định nghĩa `bestCase`: tổng performance tốt nhất mà designer kỳ vọng cho level đó. Kết quả được trình bày dưới dạng:
+
+> **`performanceScore / bestCase`**
+
+Tỉ lệ này là đầu vào để xét sao, best score và rank. `bestCase` thuộc dữ liệu level nên có thể cân bằng riêng mà không làm thay đổi luật thắng.
+
+Ví dụ kết quả:
+
+| Kết quả | Ý nghĩa |
 |---|---|
-| Rùa bị kẹt — mọi hướng đều bị chặn | `stuck` |
-| Hết quỹ bước mà chưa về đích | `out-of-steps` |
-| Về đích nhưng chưa đủ điểm | `not-enough-score` |
+| Tới đích, `remain > 0`, không ăn item | Thắng level; performance chỉ nhận phần `remain` |
+| Tới đích, `remain > 0`, có ăn item | Thắng + performance cao hơn |
+| `remain + pointCollected` gần/đạt `bestCase` | Sao/rank cao |
+| Không tới đích hoặc `remain <= 0` | Chưa giải được level |
 
-### Xếp hạng sao (tunable sau playtest)
+Ngưỡng sao/rank là dữ liệu cân bằng riêng của từng level, không phải điều kiện mở khóa chiến thắng.
 
-| Sao | Điều kiện |
-|:---:|---|
-| ⭐ | Thắng màn |
-| ⭐⭐ | Thắng + còn dư ≥ 20% quỹ bước |
-| ⭐⭐⭐ | Thắng + ăn **toàn bộ** Food có trên map |
+## 4. Core loop mới
 
----
+1. **Quan sát:** đọc map, hướng hiện tại của rùa, đích, Flow, item và vật cản.
+2. **Can thiệp:** đặt hoặc chọn item được cấp cho level.
+3. **Run:** bấm Start; rùa tự chạy liên tục, không cần nhập số bước.
+4. **Kết quả:**
+   - tới đích khi `remain > 0` → thắng;
+   - hết remain trước hoặc đúng lúc tới đích → chưa thắng;
+   - bị kẹt/sai đường → cho retry nhanh;
+   - sau khi thắng → hiển thị điểm và mức performance.
+5. **Mastery loop tùy chọn:** replay để ăn thêm điểm, dùng ít item hơn hoặc tìm route đẹp hơn.
 
-## 2. Vòng lặp gameplay theo pha
+Một lần retry phải nhanh, giữ cho người chơi tập trung vào giả thuyết “nếu đặt item ở đây thì chuyện gì xảy ra?”.
 
-Một màn chơi = **chuỗi các pha lặp lại** cho tới khi thắng hoặc thua:
+## 5. Hai lớp trải nghiệm
 
-```
-┌────────────────────────── MỘT PHA ──────────────────────────┐
-│                                                              │
-│  (1) Quan sát        (2) Đặt item          (3) Rùa chạy      │
-│  map hiện tại   →    + chọn N lượt    →    tính theo ô đích  │
-│  (kể cả dòng chảy)   cho pha này           (trôi theo dòng   │
-│                                             nếu vào ô nước)  │
-└──────────────────────────────┬───────────────────────────────┘
-                               │
-                    (4) 💥 MAP BIẾN ĐỔI BẤT NGỜ
-              (tường mất / dựng lên / dòng chảy đổi)
-                               │
-                               ▼
-                     sang pha tiếp theo…
-              (lặp tới khi rùa về đích / thua)
-```
+### 5.1 Người chơi chỉ muốn thắng
 
-### (1) Quan sát — đầu mỗi pha
+Đối với nhóm này, một level hay không nằm ở lượng cơ chế hoặc độ khó tính toán. Một level hay cần tạo được một khoảnh khắc **“À, ra là vậy!”** rõ ràng.
 
-Người chơi thấy **trạng thái map hiện tại**: vị trí + hướng nhìn của rùa, đích, **các dòng chảy và hướng chảy** (mũi tên trên ô nước), điểm đã ăn / `targetScore`, bước đã dùng / `maxSteps`, inventory còn lại, các ô hợp lệ để đặt item.
+Các tiêu chí:
 
-### (2) Đặt item & chọn N bước
+1. **Mục tiêu dễ đọc:** người chơi nhìn thấy rùa, đích và vấn đề chính trong vài giây.
+2. **Một câu hỏi puzzle trung tâm:** mỗi level nên hỏi một câu rõ ràng, ví dụ “làm sao buộc rùa rẽ xuống?” hoặc “dùng dòng nước để vượt vùng này thế nào?”.
+3. **Ít thao tác nhưng có ý nghĩa:** một hoặc hai item đúng chỗ tạo khác biệt lớn hơn nhiều thao tác nhỏ.
+4. **Nhân quả trực quan:** đặt item → map thay đổi rõ → rùa phản ứng đúng như người chơi dự đoán.
+5. **Retry không đau:** thất bại diễn ra nhanh, lý do dễ hiểu, chơi lại gần như ngay lập tức.
+6. **Có cảm giác tiến triển:** rùa liên tục di chuyển gần hơn tới đích; tránh thời gian chờ hoặc vòng lặp dài vô nghĩa.
+7. **Khoảnh khắc trình diễn:** Flow cuốn rùa, wall vỡ, item kích hoạt hoặc đường mới mở ra tạo cảm giác phần thưởng thị giác.
+8. **Không bắt buộc vét điểm:** route thắng cơ bản phải hợp lệ dù bỏ qua phần lớn item điểm.
+9. **Có thể có nhiều lời giải:** ít nhất một route đơn giản; route đẹp hơn dành cho người muốn khám phá.
+10. **Mỗi level dạy một điều:** chỉ giới thiệu một ý mới hoặc kết hợp tối đa một ý cũ với một ý mới.
 
-1. **Đặt item** tại vị trí chiến lược (ngã rẽ, hoặc chặn / lợi dụng dòng chảy).
-2. **Chọn N** — số lượt di chuyển chủ động tối đa trong pha. Quỹ `maxSteps` chỉ giảm khi rùa **đáp xuống Land**; đi vào hoặc đi giữa các ô Flow không giảm quỹ.
+Công thức level casual tốt:
 
-**Đặt Wall có kiểm tra** — không được đặt ngoài biên, chồng lên Wall có sẵn, giữa hai ô Flow hoặc tại cạnh làm mất toàn bộ đường từ vị trí rùa tới đích.
+> **Đọc được vấn đề → thử một giả thuyết → thấy phản hồi rõ → rùa tới đích → cảm thấy mình thông minh.**
 
-### (3) Rùa chạy N bước
+Độ khó nên đến từ việc nhận ra can thiệp đúng, không đến từ nhớ quá nhiều luật hoặc nhập chính xác nhiều tham số.
 
-Nhấn Start → rùa thực hiện tối đa **N lượt di chuyển chủ động** theo luật mục 4 rồi dừng. Các nhịp vào/đi trong Flow có thể làm rùa đi qua nhiều ô mà không giảm quỹ bước; nhịp đáp xuống Land mới giảm quỹ.
+### 5.2 Người chơi muốn mastery/rank
 
-- Ăn Food → cộng điểm. Ăn `+XS` → cộng bước vào quỹ.
-- **Bước vào ô dòng chảy → bị cuốn trôi** (luật mục 6); Land → Flow và Flow → Flow không tốn bước, Flow → Land tốn 1 bước.
-- Về tới đích → kết thúc màn, xét 3 điều kiện thắng.
-- Bị kẹt → thua ngay.
+Sau khi route thắng cơ bản đã rõ, cùng level mở thêm các câu hỏi:
 
-### (4) 💥 Map biến đổi
+- có thể lấy bao nhiêu điểm trước khi về đích?
+- route nào gom được item giá trị cao?
+- có thể dùng ít item can thiệp hơn không?
+- có thể tận dụng Flow hoặc wall vỡ để tạo đường tối ưu không?
+- có nhiều route cùng điểm nhưng khác độ khó/rủi ro không?
 
-Rùa đi xong pha đã chọn (chưa về đích) → map **tự biến đổi theo kịch bản** (mục 7) với animation rõ ràng → sang pha mới.
+Nhóm này cần thông tin minh bạch: `remain`, `pointCollected`, phép cộng thành `performanceScore`, `bestCase`, điểm cá nhân tốt nhất và tiêu chí sao/rank phải được công bố rõ.
 
-> Cú lừa chủ đạo: người chơi tính trước được đường rùa (luật cố định) nhưng **không biết map sẽ đổi ra sao** → mỗi pha là một lần bất ngờ, phải tính lại.
+## 6. Item là nơi chứa chiều sâu
 
----
+V2 không loại bỏ cái hay; nó chuyển cái hay khỏi danh sách điều kiện bắt buộc sang item và tương tác map.
 
-## 3. Luật đã chốt (tổng hợp)
+Mỗi item tốt nên:
 
-| # | Quyết định | Chi tiết |
-|---|---|---|
-| 1 | **Luật rẽ cố định** | Thẳng → Phải → Trái → Quay lại. Không dùng BFS để chọn hướng. |
-| 2 | **Đặt Wall có điều kiện** | Không đặt ngoài biên, chồng Wall, giữa 2 ô Flow hoặc nếu làm mất toàn bộ đường tới đích. |
-| 3 | **Tính bước theo ô đích** | Land → Land và Flow → Land tốn 1; Land → Flow và Flow → Flow miễn phí. |
-| 4 | **Ăn item khi trôi: CÓ** | Dòng chảy design được thành "băng chuyền điểm". |
-| 5 | **Đặt item lên ô nước: ĐƯỢC** | Food/`+XS` đặt trên ô nước làm mồi; Wall chỉ đặt được trên cạnh Flow–Land hoặc Land–Land (không đặt được giữa 2 ô Flow, xem #9). |
-| 6 | **Mutation scripted** (v1) | Kịch bản định nghĩa sẵn theo level. Random-có-luật để bản sau. |
-| 7 | **Mutation chỉ giữa các pha** (v1) | Mid-run ("đang đi tường dựng lên") để dành cho level khó bản sau. |
-| 8 | **Tường người chơi đặt không bị mutation xóa** | Giữ cảm giác kiểm soát. |
-| 9 | **Wall theo cạnh (edge)** | Chặn cạnh giữa 2 ô, khớp `walls[dir]` trong `CellData`. Mỗi ô có `flow?: Dir` (có giá trị = ô **Flow**/nước theo hướng đó, `undefined` = ô **Land**/cạn). Luật đặt: Flow–Flow ❌ (dòng chảy phải liền mạch, không bị chặn giữa 2 ô nước kề nhau); Flow–Land ✅; Land–Land ✅. |
-| 10 | **Food: level đặt sẵn + người chơi đặt thêm** | Cả hai nguồn, code `placeItem` đã hỗ trợ. |
-| 11 | **N bước/pha tự do** | 1 ≤ N ≤ quỹ còn lại. |
+- có một chức năng chính dễ giải thích trong một câu;
+- tạo thay đổi nhìn thấy ngay;
+- kết hợp được với luật rẽ tự động;
+- có cách dùng cơ bản để thắng;
+- có cách dùng nâng cao để gom điểm hoặc tối ưu;
+- không yêu cầu người chơi nhớ ngoại lệ ẩn.
 
-*(Các con số cụ thể — điểm, bước, tỉ lệ sao — đều tunable sau playtest.)*
+Ví dụ cấu trúc giới thiệu:
 
-### Wall vỡ đánh lừa
+| Giai đoạn | Nội dung |
+|---|---|
+| Tutorial | Một item, một mục đích, route thắng rõ |
+| Early game | Item cũ + một địa hình mới |
+| Mid game | Hai item có tương tác, điểm tạo route phụ |
+| Advanced | Flow, wall vỡ và item tạo nhiều route mastery |
 
-`WallState.DISAPPEAR` được thể hiện bằng nét đứt. Nó được tính là vật cản thật cho tới khi rùa vừa bước vào một trong hai ô nằm sát cạnh đó. Ngay lúc ấy wall vỡ, cả hai phía của cạnh chuyển thành `NONE`, bản đồ đường đi được tính lại và rùa dùng layout mới ở lần chọn hướng kế tiếp. Wall này không phải wall do người chơi đặt; nó là bẫy được thiết kế sẵn trong level.
+Wall vỡ có thể là bẫy hay, nhưng phải được báo hiệu bằng visual rõ và level đầu tiên sử dụng nó phải cho người chơi học trong môi trường ít hình phạt.
 
----
+## 7. Quy định icon điểm
 
-## 4. Luật di chuyển của rùa 🐢
+| Điểm | Icon |
+|---:|---|
+| 1 | `swim_float` |
+| 2 | `shell` |
+| 3 | `icecream` |
+| 4 | `coconut` |
+| 5 | `compass` |
+| 6 | `snail` |
+| 7 | `starfish` |
 
-Rùa **không đi ngẫu nhiên**. Luật công khai, không đổi giữa các pha — thứ thay đổi là map.
+Icon điểm scale mượt `0.8 → 1 → 0.8`. Điểm chỉ phục vụ performance, không quyết định thắng/thua.
 
-Tại thời điểm bắt đầu level, hướng nhìn của rùa được chọn từ một cạnh đang mở tại ô start theo cùng thứ tự ưu tiên; sprite tween sang hướng hợp lệ trước khi chạy, không chĩa đầu vào tường.
+## 8. UI/UX bắt buộc
 
-### Trên cạn
+Trong gameplay:
 
-- **Hành lang một chiều** (chỉ 1 lối ra ngoài lối vừa vào): tiếp tục đi tới.
-- **Ngã ba / ngã tư** — chọn theo ưu tiên (hướng tương đối theo hướng rùa đang nhìn):
+- mục tiêu “Đưa rùa tới đích khi vẫn còn bước” phải nổi bật hơn điểm;
+- bỏ UI nhập số bước;
+- điểm hiện tại vẫn cập nhật realtime nhưng được trình bày như mục tiêu phụ;
+- có Start, Retry và Back rõ ràng;
+- khi thất bại phải chỉ ra nguyên nhân trực quan: kẹt, loop hoặc sai route.
 
-| Ưu tiên | Hướng |
-|:---:|---|
-| 1 | ⬆️ **Đi thẳng** — nếu phía trước không bị chặn |
-| 2 | ➡️ **Rẽ phải** |
-| 3 | ⬅️ **Rẽ trái** |
-| 4 | 🔄 **Quay lại** |
+Sau màn:
 
-- **Mọi lối bị chặn** → rùa kẹt → thua (`stuck`).
+1. Hiện **Level Complete** khi tới đích với `remain > 0`.
+2. Tổng kết rõ `remain + pointCollected = performanceScore` và so với `bestCase`.
+3. Cho ba lựa chọn rõ: Next Level, Replay for Better Score, Back to Lobby.
 
-> Luật cố định giúp người chơi dự đoán **100%** đường đi của rùa trên map hiện tại — độ bất ngờ đến từ mutation và dòng chảy, không đến từ AI của rùa.
+Không dùng thông báo “thua vì thiếu điểm”. Nếu rùa tới đích nhưng `remain = 0`, lý do thua phải là **hết bước**, không liên quan điểm item.
 
-### Trong dòng chảy 🌊
+## 9. Nguyên tắc thiết kế level
 
-Luật ưu tiên **tạm ngưng** — rùa bị cuốn theo dòng, xem mục 6.
+Mỗi level cần ghi rõ hai route mục tiêu:
 
----
+- **Completion route:** lời giải dễ nhất để tới đích khi vẫn còn bước, không yêu cầu ăn item điểm.
+- **Mastery route:** lời giải có điểm/ngưỡng sao cao hơn.
 
-## 5. Item
+Checklist trước khi duyệt level:
 
-Người chơi đặt item lên **lối đi** trong bước (2) mỗi pha; level cũng có thể đặt sẵn.
+- Người mới có hiểu mục tiêu trong 5 giây không?
+- Completion route có cần ít kiến thức hơn Mastery route không?
+- Thất bại có giải thích được bằng hình ảnh không?
+- Item chính có tạo ra một quyết định đáng nhớ không?
+- Điểm có dẫn người chơi tới route thú vị thay vì chỉ kéo dài đường đi không?
+- Người chơi thắng cơ bản có cảm giác trọn vẹn không?
+- Người chơi giỏi có lý do rõ ràng để replay không?
 
-| Ký hiệu | Item | Tác dụng |
-|:---:|---|---|
-| `swim_float` / `shell` / `icecream` / `coconut` / `compass` / `snail` / `starfish` | 🍦 **Food 1–7 điểm** | Giá trị tương ứng là `1 / 2 / 3 / 4 / 5 / 6 / 7`; rùa đi hoặc trôi qua sẽ ăn và cộng đúng `itemValue` |
-| `W` | 🧱 **Wall** | **Chặn 1 cạnh** giữa 2 ô — bẻ hướng rùa, hoặc **chặn ngang dòng chảy** để rùa hết bị cuốn (mục 6) |
-| `+XS` | ⏱️ **+X Steps** | Rùa đi/trôi qua sẽ **cộng X bước** vào quỹ (ví dụ `+3S` = +3 bước) |
+## 10. Những quyết định cần playtest
 
----
+- Rùa bắt đầu chạy ngay hay chỉ chạy sau nút Start?
+- Người chơi được đặt toàn bộ item trước Run hay được pause/can thiệp giữa lúc chạy?
+- Khi rùa kẹt, game tự reset hay chờ người chơi bấm Retry?
+- Sao dựa hoàn toàn vào điểm hay kết hợp số item đã dùng/thời gian?
+- Rank so sánh tổng điểm, điểm từng level hay một score chuẩn hóa?
+- Có hiển thị `bestCase` trước khi chơi hay chỉ ở màn kết quả không?
 
-## 6. 🌊 Cơ chế dòng chảy (Flow) — theme cuộc thi
+Khuyến nghị cho prototype gần nhất:
 
-Dòng chảy là **địa hình** (không phải item): chuỗi ô nước liền nhau, mỗi ô có **hướng chảy** do map design sẵn. Vừa thể hiện theme FLOW, vừa là công cụ level design mạnh: đường tắt, bẫy, hoặc băng chuyền gom Food.
+> Giữ pha quan sát/đặt item, dùng một nút Start, sau đó rùa chạy tự động tới khi thắng hoặc kẹt. Không cho can thiệp giữa lúc chạy ở các level đầu. Điểm chỉ xuất hiện ở màn tổng kết và HUD phụ.
 
-### Luật trôi (cố định, công khai)
+## 11. Trạng thái migration code
 
-1. **Vào dòng:** Rùa bước (hoặc bị cuốn) vào ô dòng chảy → bị **cuốn theo hướng chảy của từng ô**, không tự chọn hướng nữa.
-2. **Trôi liên tiếp:** Mỗi nhịp trôi sang ô kế theo hướng chảy của ô đang đứng; ô kế cũng là dòng → trôi tiếp theo hướng của ô đó (dòng uốn cong được).
-3. **Ra khỏi dòng:** Ô kế theo hướng chảy là ô cạn → rùa dạt lên đó, **hướng nhìn = hướng chảy cuối**, từ bước sau đi lại theo luật mục 4.
-4. **Dòng bị chặn:** Hướng chảy bị Wall chặn (người chơi đặt hoặc mutation) → rùa **dừng trên ô nước đó**, hết bị cuốn; bước sau đi theo luật thường. → Chiêu chiến thuật: **đặt Wall chặn dòng để "vớt" rùa** đúng chỗ mình muốn.
-5. **Tính bước theo ô đích:** Land → Flow và Flow → Flow không trừ quỹ. Khi dòng đẩy rùa từ Flow lên Land, lần đáp xuống Land đó trừ 1 bước. Land → Land cũng trừ 1 bước như bình thường.
-6. **Ăn khi trôi:** Rùa vẫn ăn Food / `+XS` trên các ô nước trôi qua.
+Đã hoàn tất core V2:
 
-### Fairness
+1. Gỡ `BoardBtnNumber` khỏi scene/code và thay bằng nút `StartRun`.
+2. `TurnManager.runAutomatically()` chạy tới đích, kẹt hoặc hết remain và có guard chống loop miễn phí.
+3. Điều kiện thắng là `isAtGoal() && remain > 0`.
+4. Đã bỏ thất bại `not-enough-score`; điểm item chỉ phục vụ performance.
+5. JSON level đã có `rating.bestCase`; giá trị hiện tại là baseline tự động và cần level designer tune theo route tối ưu thực tế.
+6. Event `game-ended` trả về `remain`, `pointCollected`, `performanceScore`, `bestCase` và `ratingRatio`.
 
-- Các dòng chảy **không được tạo vòng khép kín** (trôi vô hạn) — level designer tự đảm bảo khi design map và khi viết mutation.
-- Hướng chảy **hiển thị rõ** (mũi tên/animation trên ô nước).
-
-### Tương tác hệ thống
-
-- **Với Wall:** chặn được dòng (luật 4) → thêm nước đi "cứu rùa".
-- **Với Mutation:** dòng đổi hướng / xuất hiện / biến mất giữa các pha (mục 7).
-- **Với người chơi:** luật trôi cố định + công khai → vẫn tính trước được; đúng tinh thần "bất ngờ đến từ map, không đến từ luật".
-
----
-
-## 7. 💥 Hệ thống biến đổi map (Map Mutation)
-
-Sau mỗi pha (rùa đi xong N bước, chưa về đích), map biến đổi **theo kịch bản của level** trước khi sang pha mới.
-
-### Các kiểu biến đổi
-
-| Kiểu | Mô tả | Tác động |
-|---|---|---|
-| 🧱→✨ **Tường biến mất** | Tường trên map biến mất | Mở lối đi mới không lường trước |
-| ✨→🧱 **Tường dựng lên** | Tường mới xuất hiện | Chặn tuyến đã tính — buộc đổi kế hoạch |
-| 🌊🔄 **Dòng đổi hướng** | Đoạn dòng chảy đảo/xoay hướng | Đường tắt thành bẫy (và ngược lại) |
-| 🌊✨ **Dòng xuất hiện / biến mất** | Ô cạn ↔ ô nước | Đổi hẳn cấu trúc di chuyển một vùng |
-
-### Luật fairness
-
-1. Mutation **không nhốt rùa tại chỗ** — sau khi đổi, rùa còn ≥ 1 hướng đi.
-2. Mutation **không cắt đứt hoàn toàn đường tới đích** — đảm bảo bằng tay khi viết kịch bản level (không check runtime).
-3. **Không xóa tường do người chơi đặt.**
-4. Map đổi **sau khi rùa dừng**, animation rõ ràng cho thấy cái gì vừa thay đổi.
-5. Mutation dòng chảy không tạo **vòng chảy khép kín**.
-
-### Kịch bản (v1: scripted)
-
-Mỗi level định nghĩa sẵn chuỗi mutation theo pha: *"sau pha 1: tường A mất; sau pha 2: dòng B đảo hướng…"*. Level designer kiểm soát độ khó, đảm bảo puzzle giải được. *(Bản sau có thể lai thêm random-có-luật làm gia vị / tăng replay value.)*
-
----
-
-## 8. UI / UX
-
-### Màn hình
-
-`Main Menu → Level Select → Gameplay → Win/Lose popup (retry / next)`
-
-### Trong Gameplay
-
-- **HUD:** điểm đã ăn / `targetScore` • bước còn lại / `maxSteps` • số pha hiện tại • inventory item (kéo-thả). NumberBoard đếm ngược số bước đã chọn và chỉ giảm khi rùa đáp xuống Land; Land → Flow / Flow → Flow giữ nguyên số.
-- **Icon điểm:** không có label/background. Icon scale mượt `0.8 → 1 → 0.8` theo cosine và lệch pha giữa các ô.
-- **Pha đặt item:** highlight ô/cạnh hợp lệ khi kéo item; slider hoặc +/- chọn N bước; nút **Start**.
-- **Pha rùa chạy:** khóa input; animation rùa đi từng ô (~0.3s/ô); hiệu ứng nước cuốn khi trôi (nhanh hơn đi bộ để "đã").
-- **Mutation:** camera nhấn vào chỗ thay đổi, animation tường sập/dựng, nước dâng/rút, dòng xoay mũi tên — người chơi phải **thấy rõ** cái gì vừa đổi.
-
----
-
-*Chi tiết kỹ thuật để implement → [TurtleMaze_Implementation.md](TurtleMaze_Implementation.md)*
+Còn cần làm: màn kết quả tách Completion/Performance và quy định chính thức các ngưỡng sao/rank.

@@ -843,7 +843,6 @@
     }
   ],
   "winCondition": {
-    "targetScore": 21,
     "maxSteps": 25
   },
   "inventory": {
@@ -851,5 +850,8 @@
     "wallV": 3,
     "food": 2,
     "stepBonus": 2
+  },
+  "rating": {
+    "bestCase": 64
   }
 }

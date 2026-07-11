@@ -28,17 +28,17 @@ Số bước được tính theo loại của ô đích:
 
 Vì vậy toàn bộ đoạn di chuyển trên Flow là miễn phí; một bước chỉ bị trừ khi rùa đáp xuống Land.
 
-NumberBoard hiển thị số bước đã chọn dưới dạng countdown khi rùa chạy và cũng chỉ giảm ở chuyển động có `consumesStep = true`. Land → Flow và Flow → Flow không làm giảm số trên board.
+Sau khi người chơi bấm Start, rùa tự chạy tới khi tới đích, bị kẹt hoặc hết remain. Land → Flow và Flow → Flow không giảm remain; chuyển động đáp xuống Land mới giảm 1.
 
-## Điều kiện thắng
+## Điều kiện thắng V2
 
-Rùa phải đồng thời:
+Rùa phải tới đích khi `remain > 0`. Điểm item không còn là điều kiện thắng.
 
-1. Tới đích.
-2. Thu thập đủ `targetScore`.
-3. Không dùng quá `maxSteps`.
+Performance cuối màn:
 
-HUD cập nhật `Point: current/target` ngay khi ăn điểm và `Remain: remaining/max` sau từng chuyển động có tính bước.
+`performanceScore = remain + pointCollected`
+
+Mỗi JSON level sẽ có `bestCase`; sao/rank so sánh `performanceScore / bestCase`. HUD cập nhật point và remain realtime, còn màn kết quả phải hiển thị rõ hai thành phần của phép tính.
 
 Food được đặt sẵn trên map render bằng icon, không dùng label hoặc background nên Land/Flow bên dưới vẫn nhìn thấy rõ:
 
