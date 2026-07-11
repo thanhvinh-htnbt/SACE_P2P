@@ -44,8 +44,8 @@ export class StepRemain extends Component {
         if (this.stepRemain) {
             const remain = Math.max(0, this.maxSteps - this.stepsUsed);
             this.stepRemain.string = this.maxSteps > 0
-                ? `Remain: ${remain}/${this.maxSteps}`
-                : 'Remain: --/--';
+                ? `${remain}/${this.maxSteps}`
+                : '--/--';
         }
     }
 }
