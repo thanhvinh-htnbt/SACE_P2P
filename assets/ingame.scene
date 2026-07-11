@@ -208,7 +208,7 @@
     "_priority": 0,
     "_fov": 45,
     "_fovAxis": 0,
-    "_orthoHeight": 704.6808510638298,
+    "_orthoHeight": 620.3655352480417,
     "_near": 0,
     "_far": 2000,
     "_color": {
@@ -1049,6 +1049,7 @@
     "instance": {
       "__id__": 44
     },
+    "targetOverrides": null,
     "nestedPrefabInstanceRoots": null
   },
   {
@@ -1281,6 +1282,7 @@
     "instance": {
       "__id__": 56
     },
+    "targetOverrides": null,
     "nestedPrefabInstanceRoots": null
   },
   {

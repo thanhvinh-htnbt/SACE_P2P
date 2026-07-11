@@ -25,6 +25,15 @@ interface LobbyLevelEntry {
 export class LobbyLevelSelect extends Component {
     @property gameSceneName = 'ingame';
 
+    @property({ min: 1, step: 1, tooltip: 'Số cột trong danh sách level.' })
+    levelColumns = 2;
+
+    @property({ tooltip: 'Khoảng cách ngang giữa tâm hai button level.' })
+    levelSpacingX = 360;
+
+    @property({ tooltip: 'Khoảng cách dọc giữa tâm hai hàng button level.' })
+    levelSpacingY = 100;
+
     @property(Button) playButton: Button = null;
     @property(Button) levelButton: Button = null;
     @property(Button) guideButton: Button = null;
@@ -93,21 +102,31 @@ export class LobbyLevelSelect extends Component {
         const selectableLevels = [...this.levels]
             .sort((a, b) => Number(b.data.levelId) - Number(a.data.levelId));
 
-        const discSpacing = 76;
-        const contentHeight = Math.max(610, 80 + selectableLevels.length * discSpacing);
+        const columns = Math.max(1, Math.floor(this.levelColumns));
+        const rowCount = Math.ceil(selectableLevels.length / columns);
+        const contentHeight = Math.max(
+            610,
+            130 + Math.max(0, rowCount - 1) * this.levelSpacingY,
+        );
         this.levelContent.getComponent(UITransform)?.setContentSize(580, contentHeight);
 
         selectableLevels.forEach((level, index) => {
             const disc = instantiate(this.levelButtonTemplate);
             disc.name = `LevelButton_${level.data.levelId}`;
             disc.active = true;
-            disc.setPosition(0, -60 - index * discSpacing, 0);
+            const row = Math.floor(index / columns);
+            const col = index % columns;
+            disc.setPosition(
+                (col - (columns - 1) / 2) * this.levelSpacingX,
+                -60 - row * this.levelSpacingY,
+                0,
+            );
             this.levelContent.addChild(disc);
 
             const newest = index === 0;
             const label = disc.getComponentInChildren(Label);
             if (label) {
-                label.string = `${newest ? 'MỚI NHẤT  •  ' : ''}LEVEL ${level.data.levelId}`;
+                label.string = `${newest ? 'Newest: ' : ''}Level ${level.data.levelId}`;
             }
             this.bindClick(disc.getComponent(Button), () => this.openLevel(level.name));
         });
