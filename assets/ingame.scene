@@ -624,7 +624,7 @@
     "_enabled": true,
     "__prefab": null,
     "levelPrefab": {
-      "__uuid__": "366ea1ee-14a6-4603-9e93-507ae4bd499f",
+      "__uuid__": "4a8cb278-1ca3-4c8e-830d-2185e44332fd",
       "__expectedType__": "cc.Prefab"
     },
     "levelHost": {

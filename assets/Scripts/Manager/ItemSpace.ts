@@ -1,0 +1,117 @@
+import { _decorator, Component, director, instantiate, JsonAsset, Node, Prefab, resources, Vec3 } from 'cc';
+import { Inventory, MazeLevelData } from '../Maze/MazeData';
+import { DraggableItem, InventoryItemKind, ItemDropRequest } from './DraggableItem';
+const { ccclass, property } = _decorator;
+
+@ccclass('ItemSpace')
+export class ItemSpace extends Component {
+    @property(Node) content: Node = null;
+    @property(Prefab) wallHPrefab: Prefab = null;
+    @property(Prefab) wallVPrefab: Prefab = null;
+    @property(Prefab) foodPrefab: Prefab = null;
+    @property(Prefab) stepBonusPrefab: Prefab = null;
+    @property levelName = 'level_01';
+    @property columns = 2;
+    @property spacingX = 130;
+    @property spacingY = 150;
+
+    onEnable() {
+        DraggableItem.events.on('drop', this.onItemDrop, this);
+    }
+
+    onDisable() {
+        DraggableItem.events.off('drop', this.onItemDrop, this);
+    }
+
+    start() {
+        resources.load(`levels/${this.levelName}`, JsonAsset, (err, asset) => {
+            if (err) {
+                console.error(`ItemSpace cannot load ${this.levelName}`, err);
+                return;
+            }
+            this.populate((asset.json as MazeLevelData).inventory);
+        });
+    }
+
+    populate(inventory: Inventory) {
+        const content = this.content ?? this.node;
+        content.removeAllChildren();
+
+        const entries: Array<[Prefab, number, InventoryItemKind]> = [
+            [this.wallHPrefab, inventory.wallH, 'wallH'],
+            [this.wallVPrefab, inventory.wallV, 'wallV'],
+            [this.foodPrefab, inventory.food, 'food'],
+            [this.stepBonusPrefab, inventory.stepBonus, 'stepBonus'],
+        ];
+
+        let index = 0;
+        for (const [prefab, count, kind] of entries) {
+            if (!prefab || count <= 0) continue;
+            for (let i = 0; i < count; i++) {
+                const item = instantiate(prefab);
+                item.name = `${kind}_${i + 1}`;
+                item.layer = this.node.layer;
+                content.addChild(item);
+
+                const row = Math.floor(index / Math.max(1, this.columns));
+                const col = index % Math.max(1, this.columns);
+                const x = (col - (Math.max(1, this.columns) - 1) / 2) * this.spacingX;
+                item.setPosition(new Vec3(x, -row * this.spacingY, 0));
+                item.addComponent(DraggableItem).configure(kind);
+                index++;
+            }
+        }
+    }
+
+    private onItemDrop(request: ItemDropRequest) {
+        const map = this.findMapRoot(director.getScene());
+        if (!map) return;
+
+        const local = new Vec3();
+        map.inverseTransformPoint(local, request.worldPosition);
+        const cellSize = 128;
+        let x: number;
+        let y: number;
+        let target = map;
+
+        if (request.kind === 'wallH') {
+            const col = Math.round(local.x / cellSize);
+            const boundary = Math.round((cellSize / 2 - local.y) / cellSize);
+            if (col < 0 || col >= 8 || boundary < 0 || boundary > 6) return;
+            x = col * cellSize;
+            y = cellSize / 2 - boundary * cellSize;
+            target = map.getChildByName('Walls') ?? map;
+        } else if (request.kind === 'wallV') {
+            const boundary = Math.round((local.x + cellSize / 2) / cellSize);
+            const row = Math.round(-local.y / cellSize);
+            if (boundary < 0 || boundary > 8 || row < 0 || row >= 6) return;
+            x = -cellSize / 2 + boundary * cellSize;
+            y = -row * cellSize;
+            target = map.getChildByName('Walls') ?? map;
+        } else {
+            const col = Math.round(local.x / cellSize);
+            const row = Math.round(-local.y / cellSize);
+            if (col < 0 || col >= 8 || row < 0 || row >= 6) return;
+            x = col * cellSize;
+            y = -row * cellSize;
+        }
+
+        request.item.setParent(target);
+        request.item.setPosition(x, y, 0);
+        const draggable = request.item.getComponent(DraggableItem);
+        if (draggable) draggable.enabled = false;
+        request.accept();
+    }
+
+    private findMapRoot(node: Node): Node | null {
+        if (/^Level_\d+$/.test(node.name)
+            && node.getChildByName('Terrain')
+            && node.getChildByName('Walls')) return node;
+
+        for (const child of node.children) {
+            const result = this.findMapRoot(child);
+            if (result) return result;
+        }
+        return null;
+    }
+}
