@@ -40,7 +40,19 @@ Rùa phải đồng thời:
 
 HUD cập nhật `Point: current/target` ngay khi ăn điểm và `Remain: remaining/max` sau từng chuyển động có tính bước.
 
-Food được đặt sẵn trên map chỉ render label giá trị, không render background của prefab Item để Land/Flow bên dưới vẫn nhìn thấy rõ.
+Food được đặt sẵn trên map render bằng icon, không dùng label hoặc background nên Land/Flow bên dưới vẫn nhìn thấy rõ:
+
+| Điểm | Icon |
+|---:|---|
+| 1 | `swim_float` |
+| 2 | `shell` |
+| 3 | `icecream` |
+| 4 | `coconut` |
+| 5 | `compass` |
+| 6 | `snail` |
+| 7 | `starfish` |
+
+Mỗi icon có animation scale cosine lặp vô hạn `0.8 → 1 → 0.8`, mỗi chiều mặc định `0.6s`. Các icon được lệch pha nhẹ để chuyển động trên map tự nhiên hơn.
 
 Rùa tween vị trí và hướng nhìn bằng easing `sineInOut` sau mỗi lần di chuyển. Góc quay luôn dùng cung ngắn nhất giữa hướng cũ và hướng mới; tween thường kéo dài `0.45s`, tween Flow `0.28s`.
 

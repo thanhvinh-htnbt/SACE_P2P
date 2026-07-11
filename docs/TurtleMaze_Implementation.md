@@ -60,7 +60,7 @@ export interface MazeLevelData {
 | Thuộc tính | Giá trị |
 |---|---|
 | Kích thước | 6 hàng × 8 cột |
-| Legend | Chữ số = Food, `W` = Wall, `+XS` = cộng step, `↑→↓←` = ô dòng chảy |
+| Legend | Icon Food = 1–7 điểm, `W` = Wall, `+XS` = cộng step, `↑→↓←` = ô dòng chảy |
 | `targetScore` | 5 *(draft)* |
 | `maxSteps` | 20 *(draft)* |
 | Inventory | 3 Wall, 2 Food(1đ) *(draft)* |
@@ -99,11 +99,12 @@ export interface MazeLevelData {
 7. `TurnManager.chooseSteps()` chạy cho tới khi đủ số lần `consumesStep`, không đếm lượt miễn phí Land → Flow / Flow → Flow. `BoardBtnNumber` nghe `turtle-moved` và chỉ giảm countdown khi `consumesStep = true`.
 8. Khi `TurnManager.init()`, `TurtleAgent.getNextDirection()` chọn hướng mở hợp lệ đầu tiên tại ô start. `GameBootstrap.tweenInitialFacing()` tween sprite sang hướng đó trước lượt chạy đầu tiên.
 9. `ItemSpace.applySystemWallSize()` chỉ resize wall sau khi drop hợp lệ: từ preview `128×32` về cùng format wall tĩnh `8×128`; horizontal xoay `90°`, vertical `0°`.
-10. `GameBootstrap.spawnCellItems()` tắt các `Sprite` nền của Item đặt sẵn trên cell và chỉ tạo `ValueLabel`, tránh che sprite Land/Flow.
+10. `GameBootstrap.loadPointItemFrames()` preload icon trong `resources/sprite/Item`; `spawnCellItems()` thay Sprite runtime theo mapping: `swim_float=1`, `shell=2`, `icecream=3`, `coconut=4`, `compass=5`, `snail=6`, `starfish=7`. Không còn `ValueLabel` hoặc background.
 11. `TurtleAgent.breakAdjacentWalls()` xóa `WallState.DISAPPEAR` ở cả hai ô ngay sau khi rùa tới ô kề. `TurnManager` recalculate pathfinder và emit `walls-broken`; `GameBootstrap` tween node wall về scale 0 rồi ẩn.
 12. Level 09 nằm tại `assets/resources/levels/level_09.json` và `assets/Prefabs/Level_09.prefab` (10×8). Wall vỡ dùng `wall-crack.png` cùng `BreakableWallView`; mảng `frames` hiện có một SpriteFrame và đã sẵn sàng nhận nhiều frame animation sau này.
 13. `TurtleFrameAnimator` dùng 6 frame, cập nhật bằng `update(dt)` thay vì scheduler. `GameBootstrap` truyền duration tween vào `play(duration)` để một chu kỳ frame được trải đều theo tốc độ di chuyển thường hoặc Flow; scene có thể bật `pingPong` nếu cần.
 14. Cũng trong `TurtleFrameAnimator`, trạng thái idle nội suy scale theo cosine từ `1.176471` tới `1.3` rồi quay lại. `idleHalfCycle` mặc định `0.65s`; `play()` khóa scale ở mức min và `stop()` khởi động lại nhịp idle.
+15. `PointItemAnimator` nội suy cosine scale icon từ `0.8` tới `1` rồi về `0.8` (`halfCycle=0.6s`). `GameBootstrap` truyền phase offset theo cell index để các icon không chạy đồng bộ tuyệt đối.
 
 ---
 

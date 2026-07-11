@@ -1,17 +1,13 @@
 import {
     _decorator,
-    Color,
     Component,
-    HorizontalTextAlignment,
     JsonAsset,
-    Label,
     Node,
     Prefab,
     Sprite,
-    UITransform,
+    SpriteFrame,
     Tween,
     Vec3,
-    VerticalTextAlignment,
     instantiate,
     resources,
     tween,
@@ -21,6 +17,7 @@ import { GameState } from '../Manager/GameState';
 import { ItemType, MazeLevelData } from '../Maze/MazeData';
 import { BrokenWall } from '../Player/TurtleAgent';
 import { BreakableWallView } from '../Maze/BreakableWallView';
+import { PointItemAnimator } from '../Maze/PointItemAnimator';
 import { BoardBtnNumber } from './BoardBtnNumber';
 import { TurtleFrameAnimator } from '../Player/TurtleFrameAnimator';
 const { ccclass, property } = _decorator;
@@ -28,6 +25,10 @@ const { ccclass, property } = _decorator;
 const CELL_SIZE = 128;
 const MOVE_TWEEN_DURATION = 0.45;
 const FLOW_TWEEN_DURATION = 0.28;
+const POINT_ITEM_NAMES = [
+    '', 'swim_float', 'shell', 'icecream',
+    'coconut', 'compass', 'snail', 'starfish',
+];
 
 interface TurtleViewState extends GameState {
     isFlowMove?: boolean;
@@ -45,6 +46,7 @@ export class GameBootstrap extends Component {
     private levelData: MazeLevelData = null;
     private levelNode: Node = null;
     private readonly itemNodes = new Map<number, Node>();
+    private readonly pointItemFrames = new Map<number, SpriteFrame>();
     private turtleAnimator: TurtleFrameAnimator = null;
     private isReady = false;
 
@@ -102,10 +104,12 @@ export class GameBootstrap extends Component {
             this.setTurtlePosition(data.start.row, data.start.col);
             // Hướng mặc định của gameplay là Right; sau init sẽ tween sang hướng mở hợp lệ.
             this.turtleNode.setRotationFromEuler(0, 0, this.facingToAngle(1));
-            this.spawnCellItems(levelNode, data);
-            const initialState = this.turnManager.init(data);
-            this.tweenInitialFacing(initialState.facing);
-            this.isReady = true;
+            this.loadPointItemFrames(() => {
+                this.spawnCellItems(levelNode, data);
+                const initialState = this.turnManager.init(data);
+                this.tweenInitialFacing(initialState.facing);
+                this.isReady = true;
+            });
         });
     }
 
@@ -236,28 +240,40 @@ export class GameBootstrap extends Component {
             itemNode.setPosition(cell.col * CELL_SIZE, -cell.row * CELL_SIZE, 0);
             itemLayer.addChild(itemNode);
 
-            // Item có sẵn trên map chỉ hiển thị số điểm; không dùng background
-            // của prefab vì background sẽ che texture Land/Flow bên dưới.
-            for (const sprite of itemNode.getComponentsInChildren(Sprite)) {
-                sprite.enabled = false;
+            const sprites = itemNode.getComponentsInChildren(Sprite);
+            const icon = sprites[0];
+            const pointFrame = this.pointItemFrames.get(cell.itemValue ?? 1);
+            if (icon && pointFrame) {
+                icon.enabled = true;
+                icon.spriteFrame = pointFrame;
+            } else {
+                console.warn(`Missing point icon for value ${cell.itemValue ?? 1}`);
+                for (const sprite of sprites) sprite.enabled = false;
             }
 
-            const labelNode = new Node('ValueLabel');
-            labelNode.layer = itemNode.layer;
-            itemNode.addChild(labelNode);
-
-            const transform = labelNode.addComponent(UITransform);
-            transform.setContentSize(100, 100);
-
-            const label = labelNode.addComponent(Label);
-            label.string = String(cell.itemValue ?? 1);
-            label.fontSize = 48;
-            label.lineHeight = 52;
-            label.color = new Color(30, 30, 30, 255);
-            label.horizontalAlign = HorizontalTextAlignment.CENTER;
-            label.verticalAlign = VerticalTextAlignment.CENTER;
+            // Lệch pha theo index để icon trên map không scale đồng loạt.
+            itemNode.addComponent(PointItemAnimator).configure(index * 0.073);
 
             this.itemNodes.set(index, itemNode);
         }
+    }
+
+    private loadPointItemFrames(onComplete: () => void) {
+        resources.loadDir('sprite/Item', SpriteFrame, (err, frames) => {
+            if (err) {
+                console.error('Cannot load point item icons', err);
+                onComplete();
+                return;
+            }
+
+            this.pointItemFrames.clear();
+            for (let value = 1; value <= 7; value++) {
+                const expectedName = POINT_ITEM_NAMES[value];
+                const frame = frames.find(candidate => candidate.name === expectedName);
+                if (frame) this.pointItemFrames.set(value, frame);
+                else console.warn(`Point icon not found: ${expectedName}`);
+            }
+            onComplete();
+        });
     }
 }

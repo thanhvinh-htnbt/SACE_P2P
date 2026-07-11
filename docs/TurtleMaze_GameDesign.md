@@ -156,7 +156,7 @@ Người chơi đặt item lên **lối đi** trong bước (2) mỗi pha; level
 
 | Ký hiệu | Item | Tác dụng |
 |:---:|---|---|
-| `1`–`9` | 🍦 **Food** | Rùa đi/trôi qua sẽ ăn, **cộng điểm** = giá trị trên item (`itemValue`) |
+| `swim_float` / `shell` / `icecream` / `coconut` / `compass` / `snail` / `starfish` | 🍦 **Food 1–7 điểm** | Giá trị tương ứng là `1 / 2 / 3 / 4 / 5 / 6 / 7`; rùa đi hoặc trôi qua sẽ ăn và cộng đúng `itemValue` |
 | `W` | 🧱 **Wall** | **Chặn 1 cạnh** giữa 2 ô — bẻ hướng rùa, hoặc **chặn ngang dòng chảy** để rùa hết bị cuốn (mục 6) |
 | `+XS` | ⏱️ **+X Steps** | Rùa đi/trôi qua sẽ **cộng X bước** vào quỹ (ví dụ `+3S` = +3 bước) |
 
@@ -224,6 +224,7 @@ Mỗi level định nghĩa sẵn chuỗi mutation theo pha: *"sau pha 1: tườn
 ### Trong Gameplay
 
 - **HUD:** điểm đã ăn / `targetScore` • bước còn lại / `maxSteps` • số pha hiện tại • inventory item (kéo-thả). NumberBoard đếm ngược số bước đã chọn và chỉ giảm khi rùa đáp xuống Land; Land → Flow / Flow → Flow giữ nguyên số.
+- **Icon điểm:** không có label/background. Icon scale mượt `0.8 → 1 → 0.8` theo cosine và lệch pha giữa các ô.
 - **Pha đặt item:** highlight ô/cạnh hợp lệ khi kéo item; slider hoặc +/- chọn N bước; nút **Start**.
 - **Pha rùa chạy:** khóa input; animation rùa đi từng ô (~0.3s/ô); hiệu ứng nước cuốn khi trôi (nhanh hơn đi bộ để "đã").
 - **Mutation:** camera nhấn vào chỗ thay đổi, animation tường sập/dựng, nước dâng/rút, dòng xoay mũi tên — người chơi phải **thấy rõ** cái gì vừa đổi.
