@@ -116,6 +116,10 @@ Rùa đi xong pha đã chọn (chưa về đích) → map **tự biến đổi t
 
 *(Các con số cụ thể — điểm, bước, tỉ lệ sao — đều tunable sau playtest.)*
 
+### Wall vỡ đánh lừa
+
+`WallState.DISAPPEAR` được thể hiện bằng nét đứt. Nó được tính là vật cản thật cho tới khi rùa vừa bước vào một trong hai ô nằm sát cạnh đó. Ngay lúc ấy wall vỡ, cả hai phía của cạnh chuyển thành `NONE`, bản đồ đường đi được tính lại và rùa dùng layout mới ở lần chọn hướng kế tiếp. Wall này không phải wall do người chơi đặt; nó là bẫy được thiết kế sẵn trong level.
+
 ---
 
 ## 4. Luật di chuyển của rùa 🐢

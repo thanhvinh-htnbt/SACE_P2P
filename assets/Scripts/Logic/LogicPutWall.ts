@@ -34,7 +34,7 @@ export class LogicPutWall {
         return true;
     }
 
-    // Xóa tường (ví dụ khi tường DISAPPEAR hết hạn).
+    // Xóa tường ở cả hai phía (dùng cho mutation hoặc wall DISAPPEAR bị kích hoạt).
     removeWall(row: number, col: number, dir: Dir): void {
         const cell = this.getCell(row, col);
         if (!cell) return;

@@ -106,6 +106,10 @@ export class TurnManager extends Component {
                     this.state.stepsUsed++;
                     consumedSteps++;
                 }
+                if (move.brokenWalls.length > 0) {
+                    this.pathfinder.recalculate();
+                    TurnManager.eventTarget.emit('walls-broken', move.brokenWalls);
+                }
 
                 // Callback chạy cho từng ô, nên item trên đường Flow vẫn được ăn đủ.
                 this.checkCellItem();
@@ -113,6 +117,7 @@ export class TurnManager extends Component {
                     ...this.state,
                     isFlowMove: move.isFlowMove,
                     consumesStep: move.consumesStep,
+                    brokenWalls: move.brokenWalls,
                 });
 
                 // Chờ tween view hoàn tất trước khi phát chuyển động kế tiếp.

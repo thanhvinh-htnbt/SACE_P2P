@@ -10,6 +10,13 @@ export interface TurtleMove {
     isFlowMove: boolean;
     /** Chỉ trừ quỹ bước khi ô đích là Land. Đi vào/giữa các ô Flow là miễn phí. */
     consumesStep: boolean;
+    brokenWalls: BrokenWall[];
+}
+
+export interface BrokenWall {
+    row: number;
+    col: number;
+    dir: Dir;
 }
 
 type MoveHandler = (move: TurtleMove) => void | Promise<void>;
@@ -34,7 +41,8 @@ export class TurtleAgent {
             dir,
         );
         this.move(dir);
-        await onMoved(this.createMove(false, consumesStep));
+        const brokenWalls = this.breakAdjacentWalls();
+        await onMoved(this.createMove(false, consumesStep, brokenWalls));
 
         if (!this.isAtGoal()) {
             await this.slideThroughFlow(onMoved);
@@ -87,7 +95,8 @@ export class TurtleAgent {
 
             const consumesStep = this.destinationIsLand(row, col, flowDir);
             this.move(flowDir);
-            await onMoved(this.createMove(true, consumesStep));
+            const brokenWalls = this.breakAdjacentWalls();
+            await onMoved(this.createMove(true, consumesStep, brokenWalls));
         }
     }
 
@@ -117,13 +126,39 @@ export class TurtleAgent {
         return this.getCell(row + dr, col + dc)?.flow === undefined;
     }
 
-    private createMove(isFlowMove: boolean, consumesStep: boolean): TurtleMove {
+    /** Wall DISAPPEAR vỡ ngay khi rùa vừa vào một trong hai ô kề. */
+    private breakAdjacentWalls(): BrokenWall[] {
+        const row = this.state.turtleRow;
+        const col = this.state.turtleCol;
+        const cell = this.getCell(row, col);
+        if (!cell) return [];
+
+        const broken: BrokenWall[] = [];
+        for (let dir = 0; dir < 4; dir++) {
+            const typedDir = dir as Dir;
+            if (cell.walls[typedDir] !== WallState.DISAPPEAR) continue;
+
+            cell.walls[typedDir] = WallState.NONE;
+            const [dr, dc] = DIR_OFFSETS[typedDir];
+            const neighbor = this.getCell(row + dr, col + dc);
+            if (neighbor) neighbor.walls[OPPOSITE_DIR[typedDir]] = WallState.NONE;
+            broken.push({ row, col, dir: typedDir });
+        }
+        return broken;
+    }
+
+    private createMove(
+        isFlowMove: boolean,
+        consumesStep: boolean,
+        brokenWalls: BrokenWall[],
+    ): TurtleMove {
         return {
             row: this.state.turtleRow,
             col: this.state.turtleCol,
             facing: this.state.facing,
             isFlowMove,
             consumesStep,
+            brokenWalls,
         };
     }
 

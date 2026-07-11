@@ -100,6 +100,8 @@ export interface MazeLevelData {
 8. Khi `TurnManager.init()`, `TurtleAgent.getNextDirection()` chọn hướng mở hợp lệ đầu tiên tại ô start. `GameBootstrap.tweenInitialFacing()` tween sprite sang hướng đó trước lượt chạy đầu tiên.
 9. `ItemSpace.applySystemWallSize()` chỉ resize wall sau khi drop hợp lệ: từ preview `128×32` về cùng format wall tĩnh `8×128`; horizontal xoay `90°`, vertical `0°`.
 10. `GameBootstrap.spawnCellItems()` tắt các `Sprite` nền của Item đặt sẵn trên cell và chỉ tạo `ValueLabel`, tránh che sprite Land/Flow.
+11. `TurtleAgent.breakAdjacentWalls()` xóa `WallState.DISAPPEAR` ở cả hai ô ngay sau khi rùa tới ô kề. `TurnManager` recalculate pathfinder và emit `walls-broken`; `GameBootstrap` tween node wall về scale 0 rồi ẩn.
+12. Level 09 nằm tại `assets/resources/levels/level_09.json` và `assets/Prefabs/Level_09.prefab` (10×8). Wall vỡ dùng `wall-crack.png` cùng `BreakableWallView`; mảng `frames` hiện có một SpriteFrame và đã sẵn sàng nhận nhiều frame animation sau này.
 
 ---
 

@@ -19,6 +19,8 @@ import {
 import { TurnManager } from '../Manager/TurnManager';
 import { GameState } from '../Manager/GameState';
 import { ItemType, MazeLevelData } from '../Maze/MazeData';
+import { BrokenWall } from '../Player/TurtleAgent';
+import { BreakableWallView } from '../Maze/BreakableWallView';
 import { BoardBtnNumber } from './BoardBtnNumber';
 import { TurtleFrameAnimator } from '../Player/TurtleFrameAnimator';
 const { ccclass, property } = _decorator;
@@ -41,6 +43,7 @@ export class GameBootstrap extends Component {
     @property levelName: string = 'level_01';
 
     private levelData: MazeLevelData = null;
+    private levelNode: Node = null;
     private readonly itemNodes = new Map<number, Node>();
     private turtleAnimator: TurtleFrameAnimator = null;
     private isReady = false;
@@ -49,12 +52,14 @@ export class GameBootstrap extends Component {
         // Board phát số bước; TurnManager phát vị trí mới của rùa.
         BoardBtnNumber.eventTarget.on('go', this.onGo, this);
         TurnManager.eventTarget.on('turtle-moved', this.onTurtleMoved, this);
+        TurnManager.eventTarget.on('walls-broken', this.onWallsBroken, this);
     }
 
     onDestroy() {
         BoardBtnNumber.eventTarget.off('go', this.onGo, this);
         TurnManager.eventTarget.off('turtle-moved', this.onTurtleMoved, this);
         this.turtleAnimator?.stop();
+        TurnManager.eventTarget.off('walls-broken', this.onWallsBroken, this);
     }
 
     start() {
@@ -75,6 +80,7 @@ export class GameBootstrap extends Component {
         const levelNode = host.children.find(child => /^Level_\d+$/.test(child.name))
             ?? instantiate(this.levelPrefab);
         if (!levelNode.parent) host.addChild(levelNode);
+        this.levelNode = levelNode;
 
         // Prefab tĩnh đã chứa sẵn Terrain/Walls.
         if (!this.turtleNode) {
@@ -126,6 +132,37 @@ export class GameBootstrap extends Component {
 
     private setTurtlePosition(row: number, col: number) {
         this.turtleNode.setPosition(col * CELL_SIZE, -row * CELL_SIZE, 0);
+    }
+
+    private onWallsBroken(walls: BrokenWall[]) {
+        const wallRoot = this.levelNode?.getChildByName('Walls');
+        if (!wallRoot) return;
+
+        for (const wall of walls) {
+            const name = this.getWallNodeName(wall);
+            const wallNode = wallRoot.getChildByName(name);
+            if (!wallNode || !wallNode.active) continue;
+
+            const breakableView = wallNode.getComponent(BreakableWallView);
+            if (breakableView) {
+                breakableView.play();
+                continue;
+            }
+
+            // Fallback cho level cũ chưa gắn BreakableWallView.
+            Tween.stopAllByTarget(wallNode);
+            tween(wallNode)
+                .to(0.22, { scale: new Vec3(0, 0, 1) }, { easing: 'backIn' })
+                .call(() => { wallNode.active = false; })
+                .start();
+        }
+    }
+
+    private getWallNodeName(wall: BrokenWall): string {
+        if (wall.dir === 0) return `Wall_up_${wall.row}_${wall.col}`;
+        if (wall.dir === 3) return `Wall_left_${wall.row}_${wall.col}`;
+        if (wall.dir === 2) return `Wall_up_${wall.row + 1}_${wall.col}`;
+        return `Wall_left_${wall.row}_${wall.col + 1}`;
     }
 
     private tweenTurtle(state: TurtleViewState) {
