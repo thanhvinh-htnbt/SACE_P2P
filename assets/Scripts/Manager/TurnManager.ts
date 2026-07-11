@@ -139,8 +139,14 @@ export class TurnManager extends Component {
         const idx = this.state.turtleRow * this.data.cols + this.state.turtleCol;
         const cell = this.data.cells[idx];
         if (cell.item === ItemType.Food) {
-            this.state.scoreCollected += cell.itemValue ?? 1;
+            const gainedPoint = cell.itemValue ?? 1;
+            this.state.scoreCollected += gainedPoint;
             cell.item = ItemType.None;
+            TurnManager.eventTarget.emit('point-gained', {
+                value: gainedPoint,
+                row: this.state.turtleRow,
+                col: this.state.turtleCol,
+            });
             TurnManager.eventTarget.emit('food-collected', this.state.scoreCollected);
         }
     }
@@ -154,7 +160,8 @@ export class TurnManager extends Component {
         const remain = this.getRemain();
 
         if (this.isAtGoal()) {
-            this.endGame(remain > 0, remain > 0 ? 'success' : 'out-of-steps');
+            // Dùng hết bước đúng tại đích vẫn hợp lệ: remain = 0 vẫn thắng.
+            this.endGame(remain >= 0, 'success');
             return;
         }
 

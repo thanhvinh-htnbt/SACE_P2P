@@ -4,6 +4,7 @@ import { Dir } from '../Maze/MazeConstants';
 import { DraggableItem, InventoryItemKind, ItemDropRequest } from './DraggableItem';
 import { TurnManager, TurnPhase } from './TurnManager';
 import { LevelProgress } from './LevelProgress';
+import { WallTheme } from '../Maze/WallTheme';
 const { ccclass, property } = _decorator;
 
 @ccclass('ItemSpace')
@@ -73,6 +74,9 @@ export class ItemSpace extends Component {
                 const x = (col - (Math.max(1, this.columns) - 1) / 2) * this.spacingX;
                 item.setPosition(new Vec3(x, -row * this.spacingY, 0));
                 item.addComponent(DraggableItem).configure(kind);
+                if (kind === 'wallH' || kind === 'wallV') {
+                    item.addComponent(WallTheme).configure(false);
+                }
                 index++;
             }
         }
@@ -150,18 +154,19 @@ export class ItemSpace extends Component {
 
     /**
      * Wall trong ItemSpace giữ kích thước preview 128x32 để dễ kéo.
-     * Khi đặt xuống, chuyển về đúng format wall tĩnh trong Level prefab:
-     * UITransform 8x128; wall ngang xoay 90°, wall dọc giữ 0°.
+     * Khi đặt xuống, chuyển về đúng format wall runtime của MazeBuilder:
+     * UITransform 128x32 khớp tỉ lệ ảnh gốc (texture không bị bóp méo),
+     * hướng dọc tạo bằng rotation 90° như Wall-Vertical prefab.
      */
     private applySystemWallSize(item: Node, kind: InventoryItemKind) {
         item.setScale(1, 1, 1);
-        item.setRotationFromEuler(0, 0, kind === 'wallH' ? 90 : 0);
+        item.setRotationFromEuler(0, 0, kind === 'wallH' ? 0 : 90);
         this.setWallTransformSize(item);
     }
 
     private setWallTransformSize(node: Node) {
         const transform = node.getComponent(UITransform);
-        if (transform) transform.setContentSize(8, 128);
+        if (transform) transform.setContentSize(128, 32);
         for (const child of node.children) this.setWallTransformSize(child);
     }
 
