@@ -1,6 +1,6 @@
 # 🐢 Turtle Maze — Implementation Notes (dev)
 
-> Core V2 đã được migration: không còn NumberBoard; luật thắng là `isAtGoal() && remain > 0`; điểm item không quyết định thắng. Performance được tính `remain + pointCollected` và so với `bestCase` trong từng JSON.
+> Core V2 đã được migration: không còn NumberBoard; luật thắng là `isAtGoal() && remain >= 0`; điểm item không quyết định thắng. Performance được tính `remain + pointCollected` và so với `bestCase` trong từng JSON.
 
 > Phần kỹ thuật, tách khỏi [TurtleMaze_GameDesign.md](TurtleMaze_GameDesign.md) (doc design cho team).
 > Nội dung ở đây phục vụ code/implement — data format, mapping với code hiện tại, roadmap, và các câu hỏi còn mở.
@@ -45,7 +45,7 @@ export interface PhaseMutation {
 
 // V2 — điểm không nằm trong điều kiện thắng.
 export interface WinCondition {
-    maxSteps: number;      // phải tới đích khi remain > 0
+    maxSteps: number;      // phải tới đích khi remain >= 0
 }
 
 export interface RatingConfig {
@@ -125,6 +125,9 @@ export interface MazeLevelData {
 19. Audio mix dùng BGM volume `0.16`, SFX volume `0.85`; Wave volume `0.55`, có generation token để hủy callback cũ và bị dừng/cắt clip sau `0.24s`. Play Again reload trực tiếp `ingame`; Confirm và nút Lobby gọi chuyển scene trực tiếp.
 20. `lobby.scene` chứa root node `GameAudio` load trước Canvas, wire đủ bảy AudioClip và tự đánh dấu persistent. BGM bắt đầu từ Lobby rồi giữ nguyên qua Ingame/Play Again; trên Web sẽ có tiếng từ user gesture đầu tiên do autoplay policy.
 21. Toàn bộ button Lobby, Start, Back, Confirm, Win và Lose phát SFX `click`.
+22. `WaterFrameAnimator` preload dùng chung các SpriteFrame trong `resources/anim_water`, sort theo hậu tố số và không yêu cầu sequence liên tục. Flow chạy ping-pong ở `0.20s/frame`, mỗi cell có phase offset nhẹ để loop chậm, mượt và không đồng bộ tuyệt đối.
+23. Goal dùng `resources/sprite/flag_destination.png`; `GoalAnimator` bob, pulse và nghiêng nhẹ theo chu kỳ `1.5s`. Khi ăn item, `TurnManager` emit `point-gained`; `GameBootstrap` tạo label `+N` trên đầu rùa, bay lên và fade trong `0.8s`.
+24. Wall theme dùng asset `128×32`: cạnh ngoài chu vi maze là `wall-bird`, cạnh ngăn giữa các cell là `wall-seaweed`. Wall người chơi kéo-thả cũng dùng seaweed; độ dày visual là `32px`, collision/pathfinding vẫn dựa trên cạnh logic của cell.
 
 ---
 

@@ -1,5 +1,7 @@
 import { _decorator, Component, Node, Prefab, UITransform, instantiate, Vec3 } from 'cc';
 import { MazeLevelData, WallState } from './MazeData';
+import { WaterFrameAnimator } from './WaterFrameAnimator';
+import { WallTheme } from './WallTheme';
 const { ccclass, property } = _decorator;
 
 @ccclass('MazeBuilder')
@@ -12,7 +14,10 @@ export class MazeBuilder extends Component {
     @property(Node)   mazeRoot: Node = null;         // để trống = dùng chính node này
 
     readonly CELL_SIZE = 128;
-    readonly WALL_THICKNESS = 8;
+    readonly WALL_THICKNESS = 32;
+    // Nền bg-map lớn hơn lưới ô để tạo khung viền bao quanh maze
+    readonly BG_PADDING_X = 176;
+    readonly BG_PADDING_Y = 152;
 
     build(data: MazeLevelData): Node {
         const root = this.mazeRoot ?? this.node;
@@ -47,6 +52,9 @@ export class MazeBuilder extends Component {
                 : `Land_${cell.row}_${cell.col}`;
             if (cell.flow !== undefined) {
                 tile.setRotationFromEuler(0, 0, this.flowToAngle(cell.flow));
+                const animator = tile.getComponent(WaterFrameAnimator)
+                    ?? tile.addComponent(WaterFrameAnimator);
+                animator.configure((cell.row * data.cols + cell.col) * 0.017);
             }
             tile.setPosition(pos);
             terrainRoot.addChild(tile);
@@ -57,17 +65,17 @@ export class MazeBuilder extends Component {
             const pos = this.cellPos(cell.row, cell.col);
             // Cạnh chung chỉ vẽ 1 lần: tường Trên + Trái cho mọi ô
             if (cell.walls[0] !== WallState.NONE) {
-                this.spawnWall(wallsRoot, pos, 'up', `Wall_up_${cell.row}_${cell.col}`);
+                this.spawnWall(wallsRoot, pos, 'up', `Wall_up_${cell.row}_${cell.col}`, cell.row === 0);
             }
             if (cell.walls[3] !== WallState.NONE) {
-                this.spawnWall(wallsRoot, pos, 'left', `Wall_left_${cell.row}_${cell.col}`);
+                this.spawnWall(wallsRoot, pos, 'left', `Wall_left_${cell.row}_${cell.col}`, cell.col === 0);
             }
             // Viền ngoài cùng: cạnh Dưới hàng cuối, cạnh Phải cột cuối
             if (cell.row === data.rows - 1 && cell.walls[2] !== WallState.NONE) {
-                this.spawnWall(wallsRoot, pos, 'down', `Wall_up_${data.rows}_${cell.col}`);
+                this.spawnWall(wallsRoot, pos, 'down', `Wall_up_${data.rows}_${cell.col}`, true);
             }
             if (cell.col === data.cols - 1 && cell.walls[1] !== WallState.NONE) {
-                this.spawnWall(wallsRoot, pos, 'right', `Wall_left_${cell.row}_${data.cols}`);
+                this.spawnWall(wallsRoot, pos, 'right', `Wall_left_${cell.row}_${data.cols}`, true);
             }
         }
 
@@ -79,12 +87,13 @@ export class MazeBuilder extends Component {
         return new Vec3(col * this.CELL_SIZE, -row * this.CELL_SIZE, 0);
     }
 
-    // Tường ngang: 128x8. Tường dọc: 8x128.
+    // Tường ngang: 128x32. Tường dọc: 32x128.
     private spawnWall(
         root: Node,
         basePos: Vec3,
         side: 'up' | 'down' | 'left' | 'right',
         nodeName: string,
+        isBoundary: boolean,
     ) {
         const half = this.CELL_SIZE / 2;
         const isHorizontal = side === 'up' || side === 'down';
@@ -101,6 +110,7 @@ export class MazeBuilder extends Component {
         wall.name = nodeName;
         // Hai prefab đã có orientation đúng; giữ nguyên rotation gốc của prefab.
         this.setWallSizeRecursively(wall);
+        wall.addComponent(WallTheme).configure(isBoundary);
 
         wall.setPosition(basePos.clone().add(offset));
         root.addChild(wall);
@@ -124,8 +134,8 @@ export class MazeBuilder extends Component {
     }
 
     private resizeMazeBackground(background: Node, rows: number, cols: number): void {
-        const width = cols * this.CELL_SIZE;
-        const height = rows * this.CELL_SIZE;
+        const width = cols * this.CELL_SIZE + this.BG_PADDING_X;
+        const height = rows * this.CELL_SIZE + this.BG_PADDING_Y;
         this.setSizeRecursively(background, width, height);
         background.setPosition(
             (cols - 1) * this.CELL_SIZE / 2,

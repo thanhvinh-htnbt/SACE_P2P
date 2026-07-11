@@ -24,7 +24,7 @@ V2 giảm số điều kiện bắt buộc và chuyển phần chiều sâu sang
 
 Game phục vụ hai động lực chơi khác nhau trên cùng một level:
 
-1. **Người chơi thành tựu cơ bản:** chỉ cần đưa rùa tới đích khi `remain > 0` và tận hưởng cảm giác hoàn thành level.
+1. **Người chơi thành tựu cơ bản:** chỉ cần đưa rùa tới đích khi `remain >= 0` và tận hưởng cảm giác hoàn thành level.
 2. **Người chơi mastery/rank:** tối ưu đường đi, thu thập điểm và thể hiện năng lực qua sao, điểm số hoặc bảng xếp hạng.
 
 Hai nhóm dùng cùng luật lõi. Người chơi không bị ép trở thành người chơi rank để được xem là đã thắng.
@@ -43,11 +43,11 @@ Hai nhóm dùng cùng luật lõi. Người chơi không bị ép trở thành n
 
 Điều kiện thắng bắt buộc duy nhất là biểu thức kết hợp:
 
-> **Rùa tới đích VÀ số bước còn lại `remain > 0`.**
+> **Rùa tới đích VÀ số bước còn lại `remain >= 0`.**
 
-Hai vế đều bắt buộc. Tới đích với `remain = 0` vẫn là thua.
+Hai vế đều bắt buộc. Tới đích với `remain = 0` vẫn là thắng hợp lệ.
 
-`targetScore` không còn là điều kiện thắng. Thiếu hoặc không ăn item điểm không biến một lần giải hợp lệ thành thất bại. `maxSteps` vẫn tạo giới hạn cho hành trình tự động; rùa phải về đích trước khi quỹ bước cạn.
+`targetScore` không còn là điều kiện thắng. Thiếu hoặc không ăn item điểm không biến một lần giải hợp lệ thành thất bại. `maxSteps` vẫn tạo giới hạn cho hành trình tự động; dùng bước cuối cùng để tới đích vẫn hợp lệ.
 
 ### Điểm và xếp hạng
 
@@ -72,8 +72,8 @@ Ví dụ kết quả:
 
 | Kết quả | Ý nghĩa |
 |---|---|
-| Tới đích, `remain > 0`, không ăn item | Thắng level; performance chỉ nhận phần `remain` |
-| Tới đích, `remain > 0`, có ăn item | Thắng + performance cao hơn |
+| Tới đích, `remain >= 0`, không ăn item | Thắng level; performance chỉ nhận phần `remain` |
+| Tới đích, `remain >= 0`, có ăn item | Thắng + performance cao hơn |
 | `remain + pointCollected` gần/đạt `bestCase` | Sao/rank cao |
 | Không tới đích hoặc `remain <= 0` | Chưa giải được level |
 
@@ -85,7 +85,7 @@ Ngưỡng sao/rank là dữ liệu cân bằng riêng của từng level, không
 2. **Can thiệp:** đặt hoặc chọn item được cấp cho level.
 3. **Run:** bấm Start; rùa tự chạy liên tục, không cần nhập số bước.
 4. **Kết quả:**
-   - tới đích khi `remain > 0` → thắng;
+   - tới đích khi `remain >= 0` → thắng;
    - hết remain trước hoặc đúng lúc tới đích → chưa thắng;
    - bị kẹt/sai đường → cho retry nhanh;
    - sau khi thắng → hiển thị điểm và mức performance.
@@ -180,11 +180,11 @@ Trong gameplay:
 
 Sau màn:
 
-1. Hiện **Level Complete** khi tới đích với `remain > 0`.
+1. Hiện **Level Complete** khi tới đích với `remain >= 0`.
 2. Tổng kết rõ `remain + pointCollected = performanceScore` và so với `bestCase`.
 3. Cho ba lựa chọn rõ: Next Level, Replay for Better Score, Back to Lobby.
 
-Không dùng thông báo “thua vì thiếu điểm”. Nếu rùa tới đích nhưng `remain = 0`, lý do thua phải là **hết bước**, không liên quan điểm item.
+Không dùng thông báo “thua vì thiếu điểm”. Nếu rùa dùng bước cuối cùng để tới đích (`remain = 0`) thì vẫn thắng.
 
 ## 9. Nguyên tắc thiết kế level
 
@@ -222,7 +222,7 @@ Khuyến nghị cho prototype gần nhất:
 
 1. Gỡ `BoardBtnNumber` khỏi scene/code và thay bằng nút `StartRun`.
 2. `TurnManager.runAutomatically()` chạy tới đích, kẹt hoặc hết remain và có guard chống loop miễn phí.
-3. Điều kiện thắng là `isAtGoal() && remain > 0`.
+3. Điều kiện thắng là `isAtGoal() && remain >= 0`.
 4. Đã bỏ thất bại `not-enough-score`; điểm item chỉ phục vụ performance.
 5. JSON level đã có `rating.bestCase`; giá trị hiện tại là baseline tự động và cần level designer tune theo route tối ưu thực tế.
 6. Event `game-ended` trả về `remain`, `pointCollected`, `performanceScore`, `bestCase` và `ratingRatio`.

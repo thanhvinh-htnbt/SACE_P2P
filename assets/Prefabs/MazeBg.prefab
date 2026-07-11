@@ -161,10 +161,10 @@
       "a": 240
     },
     "_spriteFrame": {
-      "__uuid__": "8549e3cb-e986-406c-834b-a2a14b1877d0@f9941",
+      "__uuid__": "f7c2b60c-8ae4-428b-96fc-82401181cc6c@f9941",
       "__expectedType__": "cc.SpriteFrame"
     },
-    "_type": 1,
+    "_type": 0,
     "_fillType": 0,
     "_sizeMode": 0,
     "_fillCenter": {
