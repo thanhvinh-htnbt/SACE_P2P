@@ -54,6 +54,7 @@
     { "row": 5, "col": 6, "walls": [1, 0, 1, 0], "item": 1, "itemValue": 3 },
     { "row": 5, "col": 7, "walls": [0, 1, 1, 0] }
   ],
-  "winCondition": { "targetScore": 9, "maxSteps": 21 },
-  "inventory": { "wallH": 1, "wallV": 3, "food": 2, "stepBonus": 0 }
+  "winCondition": { "maxSteps": 40 },
+  "inventory": { "wallH": 3, "wallV": 3, "food": 0, "stepBonus": 0 },
+  "rating": { "bestCase": 29 }
 }
