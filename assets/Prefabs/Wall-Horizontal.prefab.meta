@@ -2,12 +2,12 @@
   "ver": "1.1.50",
   "importer": "prefab",
   "imported": true,
-  "uuid": "d2e5d66b-2930-46f4-96f4-0c2daf638088",
+  "uuid": "394f125a-6f43-43f7-8471-f5b7778a119d",
   "files": [
     ".json"
   ],
   "subMetas": {},
   "userData": {
-    "syncNodeName": "FloorTile"
+    "syncNodeName": "Wall-Horizontal"
   }
 }

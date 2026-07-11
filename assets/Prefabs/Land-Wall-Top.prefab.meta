@@ -2,12 +2,12 @@
   "ver": "1.1.50",
   "importer": "prefab",
   "imported": true,
-  "uuid": "47ff43ae-c891-4ee8-8374-6b7f67d2477d",
+  "uuid": "57cd0186-2086-4d94-8288-5de10f3a8c9f",
   "files": [
     ".json"
   ],
   "subMetas": {},
   "userData": {
-    "syncNodeName": "Wall"
+    "syncNodeName": "Land-Wall-Top"
   }
 }
