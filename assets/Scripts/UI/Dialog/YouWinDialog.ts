@@ -1,5 +1,6 @@
 import { _decorator, director } from 'cc';
 import { PopupDialog } from './PopupDialog';
+import { LevelProgress } from '../../Manager/LevelProgress';
 
 const { ccclass, property } = _decorator;
 
@@ -20,6 +21,13 @@ export class YouWinDialog extends PopupDialog {
     onNextLevelClicked(): void {
         if (!this.nextLevelSceneName.trim()) {
             console.error('YouWinDialog: nextLevelSceneName chưa được cấu hình.');
+            return;
+        }
+
+        const nextLevel = LevelProgress.selectNextLevel();
+        if (!nextLevel) {
+            // Màn cuối không có level kế tiếp, quay về danh sách màn.
+            director.loadScene(this.lobbySceneName);
             return;
         }
 

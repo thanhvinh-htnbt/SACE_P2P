@@ -107,7 +107,6 @@ export class TurnManager extends Component {
                     consumedSteps++;
                 }
                 if (move.brokenWalls.length > 0) {
-                    this.pathfinder.recalculate();
                     TurnManager.eventTarget.emit('walls-broken', move.brokenWalls);
                 }
 
