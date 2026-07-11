@@ -1,5 +1,16 @@
-import { _decorator, Component, Node, Prefab, UITransform, instantiate, Vec3 } from 'cc';
-import { MazeLevelData, WallState } from './MazeData';
+import {
+    _decorator,
+    Component,
+    Node,
+    Prefab,
+    Sprite,
+    SpriteFrame,
+    UITransform,
+    instantiate,
+    Vec3,
+} from 'cc';
+import { FlowCurve, MazeLevelData, WallState } from './MazeData';
+import { Dir, DIR_OFFSETS } from './MazeConstants';
 import { WaterFrameAnimator } from './WaterFrameAnimator';
 import { WallTheme } from './WallTheme';
 const { ccclass, property } = _decorator;
@@ -11,6 +22,10 @@ export class MazeBuilder extends Component {
     @property(Prefab) flowPrefab: Prefab = null;    // ô nước (Flow, 128x128) — ô dòng chảy
     @property(Prefab) wallHPrefab: Prefab = null;   // tường ngang (Wall-Horizontal) — cạnh trên/dưới
     @property(Prefab) wallVPrefab: Prefab = null;    // tường dọc  (Wall-Vertical)   — cạnh trái/phải
+    @property(SpriteFrame) flowArrowRight: SpriteFrame = null;
+    @property(SpriteFrame) flowArrowDown: SpriteFrame = null;
+    @property(SpriteFrame) flowArrowRightDown: SpriteFrame = null;
+    @property(SpriteFrame) flowArrowLeftDown: SpriteFrame = null;
     @property(Node)   mazeRoot: Node = null;         // để trống = dùng chính node này
 
     readonly CELL_SIZE = 128;
@@ -59,6 +74,10 @@ export class MazeBuilder extends Component {
             tile.setPosition(pos);
             terrainRoot.addChild(tile);
         }
+
+        // Arrow nằm trên texture nước nhưng vẫn dưới Item / Wall / Turtle.
+        // Hướng vào được suy ra từ ô Flow liền trước để tự chọn sprite cong tại chỗ rẽ.
+        this.buildFlowDirectionOverlay(data, terrainRoot);
 
         // PASS 2 — WALL (trên cùng): vẽ hết tường sau, để luôn nổi trên nền
         for (const cell of data.cells) {
@@ -125,6 +144,101 @@ export class MazeBuilder extends Component {
             case 3: return 180;
             default: return 0;
         }
+    }
+
+    private buildFlowDirectionOverlay(data: MazeLevelData, terrainRoot: Node): void {
+        if (!this.flowArrowRight || !this.flowArrowDown
+            || !this.flowArrowRightDown || !this.flowArrowLeftDown) {
+            console.error('MazeBuilder is missing one or more Flow arrow SpriteFrames.');
+            return;
+        }
+
+        const arrowRoot = new Node('FlowDirectionArrows');
+        arrowRoot.layer = terrainRoot.layer;
+        terrainRoot.addChild(arrowRoot);
+
+        for (const cell of data.cells) {
+            if (cell.flow === undefined) continue;
+
+            const incoming = this.findIncomingFlowDirection(data, cell.row, cell.col);
+            const visual = this.getFlowArrowVisual(
+                incoming,
+                cell.flow,
+                cell.flowCurve,
+                this.flowArrowRight,
+                this.flowArrowDown,
+                this.flowArrowRightDown,
+                this.flowArrowLeftDown,
+            );
+            const arrow = new Node(`FlowArrow_${cell.row}_${cell.col}`);
+            arrow.layer = terrainRoot.layer;
+            arrow.setPosition(this.cellPos(cell.row, cell.col));
+            arrow.setRotationFromEuler(0, 0, visual.angle);
+            arrowRoot.addChild(arrow);
+
+            const sprite = arrow.addComponent(Sprite);
+            sprite.spriteFrame = visual.frame;
+            sprite.sizeMode = Sprite.SizeMode.RAW;
+        }
+    }
+
+    private findIncomingFlowDirection(
+        data: MazeLevelData,
+        row: number,
+        col: number,
+    ): Dir | null {
+        for (let direction = 0; direction < 4; direction++) {
+            const dir = direction as Dir;
+            const [dr, dc] = DIR_OFFSETS[dir];
+            const previousRow = row - dr;
+            const previousCol = col - dc;
+            if (previousRow < 0 || previousRow >= data.rows
+                || previousCol < 0 || previousCol >= data.cols) continue;
+
+            const previous = data.cells[previousRow * data.cols + previousCol];
+            if (previous?.flow === dir) return dir;
+        }
+        return null;
+    }
+
+    private getFlowArrowVisual(
+        incoming: Dir | null,
+        outgoing: Dir,
+        curve: FlowCurve | undefined,
+        right: SpriteFrame,
+        down: SpriteFrame,
+        rightDown: SpriteFrame,
+        leftDown: SpriteFrame,
+    ): { frame: SpriteFrame; angle: number } {
+        // Hai sprite gốc + xoay 180° tạo đủ bốn góc cua.
+        if (curve === 'rightDown') return { frame: rightDown, angle: 0 };
+        if (curve === 'leftDown') return { frame: leftDown, angle: 0 };
+        if (curve === 'rightUp') return { frame: leftDown, angle: 180 };
+        if (curve === 'leftUp') return { frame: rightDown, angle: 180 };
+
+        // Fallback cho JSON cũ chưa khai báo flowCurve.
+        if (incoming !== null && incoming !== outgoing
+            && ((incoming + 2) % 4) !== outgoing) {
+            const clockwiseTurns: Array<[Dir, Dir, number]> = [
+                [1, 2, 0], [0, 1, 90], [3, 0, 180], [2, 3, -90],
+            ];
+            const counterClockwiseTurns: Array<[Dir, Dir, number]> = [
+                [3, 2, 0], [2, 1, 90], [1, 0, 180], [0, 3, -90],
+            ];
+            const clockwise = clockwiseTurns.find(([from, to]) =>
+                from === incoming && to === outgoing);
+            if (clockwise) return { frame: rightDown, angle: clockwise[2] };
+
+            const counterClockwise = counterClockwiseTurns.find(([from, to]) =>
+                from === incoming && to === outgoing);
+            if (counterClockwise) {
+                return { frame: leftDown, angle: counterClockwise[2] };
+            }
+        }
+
+        if (outgoing === 0) return { frame: down, angle: 180 };
+        if (outgoing === 2) return { frame: down, angle: 0 };
+        return { frame: right, angle: outgoing === 1 ? 0 : 180 };
     }
 
     private setWallSizeRecursively(node: Node): void {

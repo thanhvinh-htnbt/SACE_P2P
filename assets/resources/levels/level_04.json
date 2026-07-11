@@ -9,7 +9,7 @@
     { "row": 0, "col": 1, "walls": [1, 0, 0, 1], "item": 1, "itemValue": 2 },
     { "row": 0, "col": 2, "walls": [1, 0, 1, 0], "flow": 1 },
     { "row": 0, "col": 3, "walls": [1, 0, 1, 0], "flow": 1 },
-    { "row": 0, "col": 4, "walls": [1, 1, 0, 0], "flow": 1 },
+    { "row": 0, "col": 4, "walls": [1, 1, 0, 0], "flow": 2, "flowCurve": "rightDown" },
     { "row": 0, "col": 5, "walls": [1, 0, 0, 1] },
     { "row": 0, "col": 6, "walls": [1, 0, 1, 0] },
     { "row": 0, "col": 7, "walls": [1, 1, 0, 0] },

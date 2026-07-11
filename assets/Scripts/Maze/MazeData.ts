@@ -12,6 +12,9 @@ export enum WallState {
     DISAPPEAR = 2,  // tường đánh lừa: vỡ khi rùa vừa tới một trong hai ô kề
 }
 
+/** Hình biểu diễn đoạn cua; `flow` vẫn là hướng rùa đi ra khỏi ô. */
+export type FlowCurve = 'rightDown' | 'leftDown' | 'rightUp' | 'leftUp';
+
 export interface CellData {
     row: number;
     col: number;
@@ -21,6 +24,8 @@ export interface CellData {
     itemValue?: number;   // số hiện trên ô Food, đồng thời là điểm nhận được khi rùa ăn
     /** 🌊 Ô dòng chảy + hướng cuốn. undefined = ô cạn (đi bộ bình thường). */
     flow?: Dir;
+    /** Có giá trị khi ô Flow là một góc cua thay vì mũi tên thẳng. */
+    flowCurve?: FlowCurve;
 }
 
 export interface WinCondition {

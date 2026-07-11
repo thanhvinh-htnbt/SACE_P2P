@@ -880,6 +880,22 @@
       "__uuid__": "47ff43ae-c891-4ee8-8374-6b7f67d2477d",
       "__expectedType__": "cc.Prefab"
     },
+    "flowArrowRight": {
+      "__uuid__": "f767a5fa-f557-4fb4-a9fe-a359bdec49f5@f9941",
+      "__expectedType__": "cc.SpriteFrame"
+    },
+    "flowArrowDown": {
+      "__uuid__": "6315b1a7-6760-4c03-b362-f9e4fa20c94c@f9941",
+      "__expectedType__": "cc.SpriteFrame"
+    },
+    "flowArrowRightDown": {
+      "__uuid__": "04f4f92b-52c0-49cd-97e7-8dce27c1d698@f9941",
+      "__expectedType__": "cc.SpriteFrame"
+    },
+    "flowArrowLeftDown": {
+      "__uuid__": "fde3b7c3-20cb-4ccf-963d-6984e6539208@f9941",
+      "__expectedType__": "cc.SpriteFrame"
+    },
     "itemPrefab": {
       "__uuid__": "0ee68911-dc03-484e-a373-b3bf0257f91e",
       "__expectedType__": "cc.Prefab"

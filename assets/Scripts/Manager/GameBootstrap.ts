@@ -61,6 +61,10 @@ export class GameBootstrap extends Component {
     @property(Prefab) flowPrefab: Prefab = null;
     @property(Prefab) wallHPrefab: Prefab = null;
     @property(Prefab) wallVPrefab: Prefab = null;
+    @property(SpriteFrame) flowArrowRight: SpriteFrame = null;
+    @property(SpriteFrame) flowArrowDown: SpriteFrame = null;
+    @property(SpriteFrame) flowArrowRightDown: SpriteFrame = null;
+    @property(SpriteFrame) flowArrowLeftDown: SpriteFrame = null;
     @property(Prefab) itemPrefab: Prefab = null;
     @property(Node) winDialogNode: Node = null;
     @property(Node) loseDialogNode: Node = null;
@@ -165,6 +169,10 @@ export class GameBootstrap extends Component {
         builder.flowPrefab = this.flowPrefab;
         builder.wallHPrefab = this.wallHPrefab;
         builder.wallVPrefab = this.wallVPrefab;
+        builder.flowArrowRight = this.flowArrowRight;
+        builder.flowArrowDown = this.flowArrowDown;
+        builder.flowArrowRightDown = this.flowArrowRightDown;
+        builder.flowArrowLeftDown = this.flowArrowLeftDown;
         return builder.build(data);
     }
 
