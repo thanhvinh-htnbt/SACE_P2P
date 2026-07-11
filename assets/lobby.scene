@@ -1,7 +1,7 @@
 [
   {
     "__type__": "cc.SceneAsset",
-    "_name": "scene",
+    "_name": "lobby",
     "_objFlags": 0,
     "__editorExtras__": {},
     "_native": "",
@@ -54,7 +54,7 @@
     "_globals": {
       "__id__": 12
     },
-    "_id": "6ebc74bf-229c-48b5-a182-49c76549c6f2"
+    "_id": "e6da6c89-433c-4401-93be-d310fa32c284"
   },
   {
     "__type__": "cc.Node",
