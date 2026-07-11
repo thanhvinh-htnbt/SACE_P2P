@@ -1,4 +1,6 @@
 import { _decorator, Component, Node, Label, Button, EventTarget } from 'cc';
+import { GameState } from './GameState';
+import { TurnManager, TurnPhase } from './TurnManager';
 const { ccclass, property } = _decorator;
 
 /**
@@ -34,6 +36,7 @@ export class BoardBtnNumber extends Component {
     @property maxDigits: number = 3;               // giới hạn độ dài số nhập
 
     private current: string = '';
+    private isRunning = false;
 
     private get digitButtons(): Node[] {
         return [this.btn0, this.btn1, this.btn2, this.btn3, this.btn4,
@@ -47,6 +50,8 @@ export class BoardBtnNumber extends Component {
         this.btnX?.on(Button.EventType.CLICK, this.onBackspace, this);
         this.btnClear?.on(Button.EventType.CLICK, this.onClear, this);
         this.btnGo?.on(Button.EventType.CLICK, this.onGo, this);
+        TurnManager.eventTarget.on('turtle-moved', this.onTurtleMoved, this);
+        TurnManager.eventTarget.on('phase-changed', this.onPhaseChanged, this);
         this.refresh();
     }
 
@@ -55,9 +60,13 @@ export class BoardBtnNumber extends Component {
         this.btnX?.off(Button.EventType.CLICK, this.onBackspace, this);
         this.btnClear?.off(Button.EventType.CLICK, this.onClear, this);
         this.btnGo?.off(Button.EventType.CLICK, this.onGo, this);
+        TurnManager.eventTarget.off('turtle-moved', this.onTurtleMoved, this);
+        TurnManager.eventTarget.off('phase-changed', this.onPhaseChanged, this);
     }
 
     private onDigit(digit: number) {
+        if (this.isRunning) return;
+        if (this.current === '0') this.current = '';
         if (this.current.length >= this.maxDigits) return;
         // tránh số 0 đứng đầu (ví dụ "0", "05")
         if (this.current === '' && digit === 0) return;
@@ -66,6 +75,7 @@ export class BoardBtnNumber extends Component {
     }
 
     private onBackspace() {
+        if (this.isRunning) return;
         if (this.current.length > 0) {
             this.current = this.current.slice(0, -1);
             this.refresh();
@@ -73,15 +83,32 @@ export class BoardBtnNumber extends Component {
     }
 
     private onClear() {
+        if (this.isRunning) return;
         this.current = '';
         this.refresh();
     }
 
     private onGo() {
+        if (this.isRunning) return;
         const steps = this.getValue();
         if (steps <= 0) return; // chưa nhập số hợp lệ
+        this.isRunning = true;
         BoardBtnNumber.eventTarget.emit('go', steps);
-        this.onClear();
+        this.refresh();
+    }
+
+    /** NumberBoard chỉ giảm khi chuyển động thực sự tiêu hao quỹ bước. */
+    private onTurtleMoved(state: GameState & { consumesStep?: boolean }) {
+        if (!this.isRunning || !state.consumesStep) return;
+        const next = Math.max(0, this.getValue() - 1);
+        this.current = String(next);
+        this.refresh();
+    }
+
+    private onPhaseChanged(phase: TurnPhase) {
+        if (phase === TurnPhase.PlacingItem || phase === TurnPhase.GameEnded) {
+            this.isRunning = false;
+        }
     }
 
     /** Số bước hiện đang nhập (0 nếu chưa nhập). */
@@ -91,6 +118,7 @@ export class BoardBtnNumber extends Component {
 
     /** Reset bàn phím về rỗng (gọi từ ngoài sau khi bắt đầu lượt mới). */
     reset() {
+        this.isRunning = false;
         this.onClear();
     }
 

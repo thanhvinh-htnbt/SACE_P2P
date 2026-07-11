@@ -12,7 +12,8 @@ export class LogicPutWall {
         const neighbor = this.getNeighbor(row, col, dir);
         if (!neighbor) return false; // cạnh ngoài biên map, không có ô kề
 
-        if (cell.walls[dir] !== WallState.NONE) return false; // đã có tường ở cạnh này
+        if (cell.walls[dir] !== WallState.NONE
+            || neighbor.walls[OPPOSITE_DIR[dir]] !== WallState.NONE) return false;
 
         return cell.flow === undefined || neighbor.flow === undefined;
     }
@@ -33,7 +34,7 @@ export class LogicPutWall {
         return true;
     }
 
-    // Xóa tường (ví dụ khi tường DISAPPEAR hết hạn).
+    // Xóa tường ở cả hai phía (dùng cho mutation hoặc wall DISAPPEAR bị kích hoạt).
     removeWall(row: number, col: number, dir: Dir): void {
         const cell = this.getCell(row, col);
         if (!cell) return;

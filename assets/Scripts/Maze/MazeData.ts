@@ -9,7 +9,7 @@ export enum ItemType {
 export enum WallState {
     NONE = 0,       // không có tường, đi qua được
     NORMAL = 1,     // tường thường, chặn vĩnh viễn
-    DISAPPEAR = 2,  // tường sẽ biến mất (level sau) — vẫn chặn đường cho tới khi biến mất
+    DISAPPEAR = 2,  // tường đánh lừa: vỡ khi rùa vừa tới một trong hai ô kề
 }
 
 export interface CellData {

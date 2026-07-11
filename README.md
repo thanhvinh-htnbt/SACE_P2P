@@ -1,43 +1,47 @@
-Turtle Maze Description
+# Turtle Maze
 
-Rùa xuất phát trong một mê cung dạng ma trận. Trên đường có các đồ ăn để cộng điểm. Rùa sẽ tự động đi theo mê cung. Ở các ngã ba hoặc ngã tư, rùa sẽ tự chọn đường theo sự ưu tiên thứ tự là đi thẳng, rẽ phải, rẽ trái, quay đầu.
+Rùa tự động di chuyển trong mê cung theo thứ tự ưu tiên cố định:
 
-Bắt đầu mỗi lượt chơi, Người chơi đặt **Item** để trên lối đi và cho số bước mà rùa di chuyển, nếu là Wall khiến rùa chỉ còn những hướng mà người chơi mong muốn. Nhờ vậy, gameplay không phải là “vẽ đường đi” trực tiếp, mà là **thiết kế lại mê cung bằng vật cản** để ép rùa đi theo tuyến tối ưu.
+1. Đi thẳng.
+2. Rẽ phải.
+3. Rẽ trái.
+4. Quay đầu.
 
-Điều kiện thắng gồm 3 yếu tố:
+Người chơi kéo Wall từ ItemSpace và đặt vào cạnh giữa hai ô để thay đổi đường đi. Wall hợp lệ được ghi vào cả hai ô kề nhau và là vật cản thật; rùa và dòng chảy không thể đi xuyên qua. Không thể đặt Wall ngoài biên, chồng lên Wall có sẵn, giữa hai ô Flow hoặc tại vị trí làm mất toàn bộ đường tới đích.
 
-1. Rùa phải **về tới đích**.
-2. Rùa phải **ăn đủ số điểm yêu cầu**.
-3. Rùa phải về đích **trong vòng số bước quy định**.
+Wall trong ItemSpace dùng kích thước preview `128×32` để dễ thao tác. Sau khi drop hợp lệ, wall được chuẩn hóa giống wall hệ thống: `UITransform 8×128`; wall ngang xoay `90°`, wall dọc giữ `0°`.
 
----
+## Wall vỡ (`WallState.DISAPPEAR`)
 
-# Vòng lặp gameplay
+Wall nét đứt vẫn chặn đường khi người chơi quan sát và tính toán. Khi rùa vừa tới một trong hai ô kề wall, wall vỡ trước lần chọn hướng tiếp theo, được xóa khỏi `walls` của cả hai ô và pathfinding được tính lại. Vì vậy rùa lập tức chọn đường mới như thể cạnh đó không còn tường. Level 09 sử dụng cơ chế này để đánh lừa người chơi.
 
-Một màn chơi có thể chia thành 3 pha:
+Visual wall vỡ dùng `wall-crack.png` và component `BreakableWallView`. Component nhận mảng `frames`; hiện có một frame và dùng tween thu nhỏ khi vỡ. Khi có thêm asset animation, chỉ cần gán các SpriteFrame theo thứ tự vào `frames` để chạy frame-by-frame trước khi wall biến mất.
 
-## 1. Pha quan sát
+## Luật tính bước
 
-Người chơi nhìn thấy toàn bộ mê cung, vị trí rùa, đích, đò ăn và các ngã rẽ quan trọng.
+Số bước được tính theo loại của ô đích:
 
-Game hiển thị:
+- Land → Land: tốn 1 bước.
+- Land → Flow: không tốn bước.
+- Flow → Flow: không tốn bước.
+- Flow → Land: tốn 1 bước.
 
-* Vị trí hiện tại của rùa.
-* Vị trí đích.
-* Số điểm hiện tại / cần đạt.
-* Số bước hiện tại / giới hạn.
-* Các loại item và số lượng.
-* Các ô có thể đặt item.
+Vì vậy toàn bộ đoạn di chuyển trên Flow là miễn phí; một bước chỉ bị trừ khi rùa đáp xuống Land.
 
-## 2. Pha đặt item và chọn số bước
+NumberBoard hiển thị số bước đã chọn dưới dạng countdown khi rùa chạy và cũng chỉ giảm ở chuyển động có `consumesStep = true`. Land → Flow và Flow → Flow không làm giảm số trên board.
 
-Người chơi đặt item tại các ngã ba hoặc ngã tư. Chọn số bước mà người chơi muốn rùa đi.
+## Điều kiện thắng
 
-Ví dụ: tại một ngã tư có 4 hướng, người chơi có thể đặt Wall ở trước mặt để rùa không thể đi thẳng mà phải buộc rẽ.
+Rùa phải đồng thời:
 
-## 3. Pha rùa di chuyển
+1. Tới đích.
+2. Thu thập đủ `targetScore`.
+3. Không dùng quá `maxSteps`.
 
-Sau khi người chơi bấm GO, rùa tự động di chuyển.
+HUD cập nhật `Point: current/target` ngay khi ăn điểm và `Remain: remaining/max` sau từng chuyển động có tính bước.
 
-Người chơi quan sát xem rùa có đi đúng lộ trình không.
----
+Food được đặt sẵn trên map chỉ render label giá trị, không render background của prefab Item để Land/Flow bên dưới vẫn nhìn thấy rõ.
+
+Rùa tween vị trí và hướng nhìn bằng easing `sineInOut` sau mỗi lần di chuyển. Góc quay luôn dùng cung ngắn nhất giữa hướng cũ và hướng mới; tween thường kéo dài `0.45s`, tween Flow `0.28s`.
+
+Khi bắt đầu level, rùa không giữ một hướng cố định có thể chĩa vào tường. Hướng khởi tạo được chọn từ cạnh mở đầu tiên theo luật thẳng → phải → trái → quay đầu, sau đó đầu rùa tween sang hướng hợp lệ trong `0.4s`.
