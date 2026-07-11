@@ -55,5 +55,5 @@
     { "row": 5, "col": 7, "walls": [0, 1, 1, 0], "flow": 1 }
   ],
   "winCondition": { "targetScore": 10, "maxSteps": 24 },
-  "inventory": { "wallH": 2, "wallV": 2, "food": 0, "stepBonus": 0 }
+  "inventory": { "wallH": 2, "wallV": 1, "food": 0, "stepBonus": 0 }
 }
