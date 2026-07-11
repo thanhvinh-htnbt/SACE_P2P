@@ -509,15 +509,15 @@
     }
   ],
   "winCondition": {
-    "maxSteps": 20
+    "maxSteps": 30
   },
   "inventory": {
-    "wallH": 0,
-    "wallV": 1,
+    "wallH": 3,
+    "wallV": 3,
     "food": 0,
     "stepBonus": 0
   },
   "rating": {
-    "bestCase": 36
+    "bestCase": 18
   }
 }
