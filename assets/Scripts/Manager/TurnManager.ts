@@ -1,7 +1,6 @@
 import { _decorator, Component } from 'cc';
 import { EventTarget } from 'cc';
 import { MazeLevelData, ItemType } from '../Maze/MazeData';
-import { MazePathfinder } from '../Maze/MazePathfinder';
 import { Dir } from '../Maze/MazeConstants';
 import { GameState } from './GameState';
 import { TurtleAgent } from '../Player/TurtleAgent';
@@ -20,14 +19,14 @@ export class TurnManager extends Component {
     static eventTarget = new EventTarget(); // Manager -> UI
 
     private data: MazeLevelData;
-    private pathfinder: MazePathfinder;
+    private wallLogic: LogicPutWall;
     private state: GameState;
     private turtle: TurtleAgent;
     private phase: TurnPhase = TurnPhase.PlacingItem;
 
     init(data: MazeLevelData): GameState {
         this.data = data;
-        this.pathfinder = new MazePathfinder(data);
+        this.wallLogic = new LogicPutWall(data);
         this.state = {
             turtleRow: data.start.row,
             turtleCol: data.start.col,
@@ -51,17 +50,12 @@ export class TurnManager extends Component {
         if (this.phase !== TurnPhase.PlacingItem || !this.data || !this.state) return false;
 
         if (itemType === ItemType.Wall && dir !== null) {
-            // Chặn cạnh ngoài biên, cạnh đã có wall và cạnh Flow-Flow trước khi thử pathfinding.
-            if (!new LogicPutWall(this.data).canPlaceWall(row, col, dir)) {
+            // Chỉ xét tính hợp lệ của cạnh. Người chơi được phép tự chặn đường hoặc tự nhốt rùa.
+            // Không đặt được nếu: ngoài biên, cạnh đã có wall, hoặc nằm giữa hai ô Flow.
+            if (!this.wallLogic.placeWall(row, col, dir)) {
                 TurnManager.eventTarget.emit('wall-blocked-invalid');
                 return false;
             }
-            const turtlePos = { row: this.state.turtleRow, col: this.state.turtleCol };
-            if (!this.pathfinder.canPlaceWallSafely(row, col, dir, turtlePos)) {
-                TurnManager.eventTarget.emit('wall-blocked-invalid');
-                return false;
-            }
-            this.pathfinder.placeWall(row, col, dir);
         } else if (itemType === ItemType.Food) {
             const idx = row * this.data.cols + col;
             this.data.cells[idx].item = ItemType.Food;

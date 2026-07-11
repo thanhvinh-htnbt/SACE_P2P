@@ -20,6 +20,7 @@ import { TurnManager } from '../Manager/TurnManager';
 import { GameState } from '../Manager/GameState';
 import { ItemType, MazeLevelData } from '../Maze/MazeData';
 import { BoardBtnNumber } from './BoardBtnNumber';
+import { TurtleFrameAnimator } from '../Player/TurtleFrameAnimator';
 const { ccclass, property } = _decorator;
 
 const CELL_SIZE = 128;
@@ -41,6 +42,7 @@ export class GameBootstrap extends Component {
 
     private levelData: MazeLevelData = null;
     private readonly itemNodes = new Map<number, Node>();
+    private turtleAnimator: TurtleFrameAnimator = null;
     private isReady = false;
 
     onLoad() {
@@ -52,6 +54,7 @@ export class GameBootstrap extends Component {
     onDestroy() {
         BoardBtnNumber.eventTarget.off('go', this.onGo, this);
         TurnManager.eventTarget.off('turtle-moved', this.onTurtleMoved, this);
+        this.turtleAnimator?.stop();
     }
 
     start() {
@@ -81,6 +84,8 @@ export class GameBootstrap extends Component {
 
         // Map là prefab tĩnh. Đưa rùa vào map ngay để luôn render trên cùng.
         this.turtleNode.setParent(levelNode, false);
+        this.turtleAnimator = this.turtleNode.getComponent(TurtleFrameAnimator)
+            ?? this.turtleNode.addComponent(TurtleFrameAnimator);
 
         // JSON chỉ cung cấp start và gameplay data, không dùng để dựng map.
         resources.load(`levels/${this.levelName}`, JsonAsset, (err, asset) => {
@@ -138,12 +143,16 @@ export class GameBootstrap extends Component {
         const duration = state.isFlowMove ? FLOW_TWEEN_DURATION : MOVE_TWEEN_DURATION;
 
         Tween.stopAllByTarget(node);
+        this.turtleAnimator?.play();
         tween(node)
             .to(duration, {
                 position: targetPosition,
                 angle: tweenAngle,
             }, { easing: 'sineInOut' })
-            .call(() => node.setRotationFromEuler(0, 0, targetAngle))
+            .call(() => {
+                node.setRotationFromEuler(0, 0, targetAngle);
+                this.turtleAnimator?.stop();
+            })
             .start();
     }
 
