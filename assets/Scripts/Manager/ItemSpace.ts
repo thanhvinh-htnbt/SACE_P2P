@@ -72,7 +72,9 @@ export class ItemSpace extends Component {
                 const row = Math.floor(index / Math.max(1, this.columns));
                 const col = index % Math.max(1, this.columns);
                 const x = (col - (Math.max(1, this.columns) - 1) / 2) * this.spacingX;
-                item.setPosition(new Vec3(x, -row * this.spacingY, 0));
+                // Content anchor (0.5, 1): gốc ở mép trên nên hàng đầu phải tụt
+                // xuống nửa bước lưới để item không lòi khỏi khung.
+                item.setPosition(new Vec3(x, -(row + 0.5) * this.spacingY, 0));
                 item.addComponent(DraggableItem).configure(kind);
                 if (kind === 'wallH' || kind === 'wallV') {
                     item.addComponent(WallTheme).configure(false);
