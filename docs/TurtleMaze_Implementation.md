@@ -102,6 +102,8 @@ export interface MazeLevelData {
 10. `GameBootstrap.spawnCellItems()` tắt các `Sprite` nền của Item đặt sẵn trên cell và chỉ tạo `ValueLabel`, tránh che sprite Land/Flow.
 11. `TurtleAgent.breakAdjacentWalls()` xóa `WallState.DISAPPEAR` ở cả hai ô ngay sau khi rùa tới ô kề. `TurnManager` recalculate pathfinder và emit `walls-broken`; `GameBootstrap` tween node wall về scale 0 rồi ẩn.
 12. Level 09 nằm tại `assets/resources/levels/level_09.json` và `assets/Prefabs/Level_09.prefab` (10×8). Wall vỡ dùng `wall-crack.png` cùng `BreakableWallView`; mảng `frames` hiện có một SpriteFrame và đã sẵn sàng nhận nhiều frame animation sau này.
+13. `TurtleFrameAnimator` dùng 6 frame, cập nhật bằng `update(dt)` thay vì scheduler. `GameBootstrap` truyền duration tween vào `play(duration)` để một chu kỳ frame được trải đều theo tốc độ di chuyển thường hoặc Flow; scene có thể bật `pingPong` nếu cần.
+14. Cũng trong `TurtleFrameAnimator`, trạng thái idle nội suy scale theo cosine từ `1.176471` tới `1.3` rồi quay lại. `idleHalfCycle` mặc định `0.65s`; `play()` khóa scale ở mức min và `stop()` khởi động lại nhịp idle.
 
 ---
 
