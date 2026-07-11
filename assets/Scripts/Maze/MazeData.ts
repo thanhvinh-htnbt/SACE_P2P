@@ -6,11 +6,17 @@ export enum ItemType {
     Wall = 2,      // chặn đường (người chơi đặt)
 }
 
+export enum WallState {
+    NONE = 0,       // không có tường, đi qua được
+    NORMAL = 1,     // tường thường, chặn vĩnh viễn
+    DISAPPEAR = 2,  // tường sẽ biến mất (level sau) — vẫn chặn đường cho tới khi biến mất
+}
+
 export interface CellData {
     row: number;
     col: number;
     /** Tường 4 cạnh theo thứ tự [Up, Right, Down, Left] — khớp enum Dir. */
-    walls: [boolean, boolean, boolean, boolean];
+    walls: [WallState, WallState, WallState, WallState];
     item?: ItemType;      // item hiện có trên ô (nếu có)
     itemValue?: number;   // giá trị điểm nếu là Food
     /** 🌊 Ô dòng chảy + hướng cuốn. undefined = ô cạn (đi bộ bình thường). */

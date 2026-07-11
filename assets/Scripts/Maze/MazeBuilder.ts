@@ -1,5 +1,5 @@
 import { _decorator, Component, Node, Prefab, instantiate, Vec3 } from 'cc';
-import { MazeLevelData } from './MazeData';
+import { MazeLevelData, WallState } from './MazeData';
 const { ccclass, property } = _decorator;
 
 @ccclass('MazeBuilder')
@@ -30,11 +30,11 @@ export class MazeBuilder extends Component {
         for (const cell of data.cells) {
             const pos = this.cellPos(cell.row, cell.col);
             // Cạnh chung chỉ vẽ 1 lần: tường Trên + Trái cho mọi ô
-            if (cell.walls[0]) this.spawnWall(root, pos, 'up');
-            if (cell.walls[3]) this.spawnWall(root, pos, 'left');
+            if (cell.walls[0] !== WallState.NONE) this.spawnWall(root, pos, 'up');
+            if (cell.walls[3] !== WallState.NONE) this.spawnWall(root, pos, 'left');
             // Viền ngoài cùng: cạnh Dưới hàng cuối, cạnh Phải cột cuối
-            if (cell.row === data.rows - 1 && cell.walls[2]) this.spawnWall(root, pos, 'down');
-            if (cell.col === data.cols - 1 && cell.walls[1]) this.spawnWall(root, pos, 'right');
+            if (cell.row === data.rows - 1 && cell.walls[2] !== WallState.NONE) this.spawnWall(root, pos, 'down');
+            if (cell.col === data.cols - 1 && cell.walls[1] !== WallState.NONE) this.spawnWall(root, pos, 'right');
         }
     }
 

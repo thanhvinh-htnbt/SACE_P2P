@@ -1,4 +1,4 @@
-import { MazeLevelData } from '../Maze/MazeData';
+import { MazeLevelData, WallState } from '../Maze/MazeData';
 import { MazePathfinder } from '../Maze/MazePathfinder';
 import { GameState } from '../Manager/GameState';
 import { Dir, DIR_OFFSETS } from '../Maze/MazeConstants';
@@ -27,12 +27,12 @@ export class TurtleAgent {
         const cell = this.data.cells[idx];
 
         // 1. Ưu tiên đi thẳng nếu còn mở
-        if (!cell.walls[this.state.facing]) {
+        if (cell.walls[this.state.facing] === WallState.NONE) {
             return this.state.facing as Dir;
         }
 
         // 2. Lấy các hướng mở, chọn hướng gần đích nhất
-        const openDirs: Dir[] = [0, 1, 2, 3].filter(d => !cell.walls[d]) as Dir[];
+        const openDirs: Dir[] = [0, 1, 2, 3].filter(d => cell.walls[d] === WallState.NONE) as Dir[];
         if (openDirs.length === 0) return null; // hết đường, kẹt
 
         const dists = openDirs.map(d => this.getNeighborDistance(d));
