@@ -264,7 +264,7 @@
     "_priority": 0,
     "_fov": 45,
     "_fovAxis": 0,
-    "_orthoHeight": 620.3655352480417,
+    "_orthoHeight": 704.6808510638298,
     "_near": 0,
     "_far": 2000,
     "_color": {
@@ -571,8 +571,8 @@
     "__prefab": null,
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 869.6484375,
-      "height": 50.4
+      "width": 980.3544921875,
+      "height": 52.4
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -604,8 +604,8 @@
     "_string": "GUIDE THE TURTLE THROUGH EVERY MAZE",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 40,
-    "_fontSize": 40,
+    "_actualFontSize": 45,
+    "_fontSize": 45,
     "_fontFamily": "Arial",
     "_lineHeight": 40,
     "_overflow": 0,
@@ -618,15 +618,15 @@
     "_isUnderline": false,
     "_underlineHeight": 2,
     "_cacheMode": 0,
-    "_enableOutline": false,
+    "_enableOutline": true,
     "_outlineColor": {
       "__type__": "cc.Color",
-      "r": 0,
-      "g": 0,
-      "b": 0,
+      "r": 34,
+      "g": 79,
+      "b": 128,
       "a": 255
     },
-    "_outlineWidth": 2,
+    "_outlineWidth": 1,
     "_enableShadow": false,
     "_shadowColor": {
       "__type__": "cc.Color",
@@ -655,9 +655,9 @@
     "__prefab": null,
     "_alignFlags": 41,
     "_target": null,
-    "_left": 525.17578125,
-    "_right": 525.17578125,
-    "_top": 460,
+    "_left": 800.8115234375,
+    "_right": 800.8115234375,
+    "_top": 453,
     "_bottom": 0,
     "_horizontalCenter": 0,
     "_verticalCenter": 0,
@@ -756,7 +756,7 @@
     "_lpos": {
       "__type__": "cc.Vec3",
       "x": 0,
-      "y": 11.3,
+      "y": 13.5,
       "z": 0
     },
     "_lrot": {
@@ -794,8 +794,8 @@
     "__prefab": null,
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 77.8125,
-      "height": 50.4
+      "width": 117.14208984375,
+      "height": 73.3
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -827,21 +827,21 @@
     "_string": "Play",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 40,
-    "_fontSize": 40,
+    "_actualFontSize": 55,
+    "_fontSize": 55,
     "_fontFamily": "Arial",
-    "_lineHeight": 40,
+    "_lineHeight": 55,
     "_overflow": 0,
     "_enableWrapText": true,
     "_font": null,
     "_isSystemFontUsed": true,
     "_spacingX": 0,
     "_isItalic": false,
-    "_isBold": false,
+    "_isBold": true,
     "_isUnderline": false,
     "_underlineHeight": 2,
     "_cacheMode": 0,
-    "_enableOutline": false,
+    "_enableOutline": true,
     "_outlineColor": {
       "__type__": "cc.Color",
       "r": 0,
@@ -878,9 +878,9 @@
     "__prefab": null,
     "_alignFlags": 41,
     "_target": null,
-    "_left": 109.59375,
-    "_right": 109.59375,
-    "_top": 20,
+    "_left": 89.928955078125,
+    "_right": 89.928955078125,
+    "_top": 6.350000000000001,
     "_bottom": 0,
     "_horizontalCenter": 0,
     "_verticalCenter": 0,
@@ -1120,7 +1120,7 @@
     "_lpos": {
       "__type__": "cc.Vec3",
       "x": 0,
-      "y": 11.3,
+      "y": 13.5,
       "z": 0
     },
     "_lrot": {
@@ -1158,8 +1158,8 @@
     "__prefab": null,
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 95.625,
-      "height": 50.4
+      "width": 144.64208984375,
+      "height": 73.3
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -1191,21 +1191,21 @@
     "_string": "Level",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 40,
-    "_fontSize": 40,
+    "_actualFontSize": 55,
+    "_fontSize": 55,
     "_fontFamily": "Arial",
-    "_lineHeight": 40,
+    "_lineHeight": 55,
     "_overflow": 0,
     "_enableWrapText": true,
     "_font": null,
     "_isSystemFontUsed": true,
     "_spacingX": 0,
     "_isItalic": false,
-    "_isBold": false,
+    "_isBold": true,
     "_isUnderline": false,
     "_underlineHeight": 2,
     "_cacheMode": 0,
-    "_enableOutline": false,
+    "_enableOutline": true,
     "_outlineColor": {
       "__type__": "cc.Color",
       "r": 0,
@@ -1242,9 +1242,9 @@
     "__prefab": null,
     "_alignFlags": 41,
     "_target": null,
-    "_left": 100.6875,
-    "_right": 100.6875,
-    "_top": 20,
+    "_left": 76.178955078125,
+    "_right": 76.178955078125,
+    "_top": 6.350000000000001,
     "_bottom": 0,
     "_horizontalCenter": 0,
     "_verticalCenter": 0,
@@ -1484,7 +1484,7 @@
     "_lpos": {
       "__type__": "cc.Vec3",
       "x": 0,
-      "y": 11.3,
+      "y": 13.5,
       "z": 0
     },
     "_lrot": {
@@ -1522,8 +1522,8 @@
     "__prefab": null,
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 106.73828125,
-      "height": 50.4
+      "width": 159.84228515625,
+      "height": 73.3
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -1555,21 +1555,21 @@
     "_string": "Guide",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 40,
-    "_fontSize": 40,
+    "_actualFontSize": 55,
+    "_fontSize": 55,
     "_fontFamily": "Arial",
-    "_lineHeight": 40,
+    "_lineHeight": 55,
     "_overflow": 0,
     "_enableWrapText": true,
     "_font": null,
     "_isSystemFontUsed": true,
     "_spacingX": 0,
     "_isItalic": false,
-    "_isBold": false,
+    "_isBold": true,
     "_isUnderline": false,
     "_underlineHeight": 2,
     "_cacheMode": 0,
-    "_enableOutline": false,
+    "_enableOutline": true,
     "_outlineColor": {
       "__type__": "cc.Color",
       "r": 0,
@@ -1606,9 +1606,9 @@
     "__prefab": null,
     "_alignFlags": 41,
     "_target": null,
-    "_left": 95.130859375,
-    "_right": 95.130859375,
-    "_top": 20,
+    "_left": 68.578857421875,
+    "_right": 68.578857421875,
+    "_top": 6.350000000000001,
     "_bottom": 0,
     "_horizontalCenter": 0,
     "_verticalCenter": 0,
@@ -1781,7 +1781,7 @@
         "__id__": 49
       }
     ],
-    "_active": true,
+    "_active": false,
     "_components": [
       {
         "__id__": 85
@@ -2063,7 +2063,7 @@
     "_lpos": {
       "__type__": "cc.Vec3",
       "x": 0,
-      "y": 292.326,
+      "y": 290,
       "z": 0
     },
     "_lrot": {
@@ -2101,8 +2101,8 @@
     "__prefab": null,
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 366.9140625,
-      "height": 75.348
+      "width": 524.15625,
+      "height": 104.8
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -2126,29 +2126,29 @@
     "_dstBlendFactor": 4,
     "_color": {
       "__type__": "cc.Color",
-      "r": 255,
-      "g": 255,
-      "b": 255,
+      "r": 241,
+      "g": 252,
+      "b": 253,
       "a": 255
     },
     "_string": "Choose Level",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 60,
-    "_fontSize": 60,
+    "_actualFontSize": 80,
+    "_fontSize": 80,
     "_fontFamily": "Arial",
-    "_lineHeight": 59.8,
+    "_lineHeight": 80,
     "_overflow": 0,
     "_enableWrapText": true,
     "_font": null,
     "_isSystemFontUsed": true,
     "_spacingX": 0,
     "_isItalic": false,
-    "_isBold": false,
+    "_isBold": true,
     "_isUnderline": false,
     "_underlineHeight": 2,
     "_cacheMode": 0,
-    "_enableOutline": false,
+    "_enableOutline": true,
     "_outlineColor": {
       "__type__": "cc.Color",
       "r": 0,
@@ -2187,7 +2187,7 @@
     "_target": null,
     "_left": 0,
     "_right": 0,
-    "_top": 10,
+    "_top": -2.3999999999999773,
     "_bottom": 0,
     "_horizontalCenter": 0,
     "_verticalCenter": 0,
@@ -2445,7 +2445,7 @@
     "_lpos": {
       "__type__": "cc.Vec3",
       "x": 0,
-      "y": 0,
+      "y": 5,
       "z": 0
     },
     "_lrot": {
@@ -2483,8 +2483,8 @@
     "__prefab": null,
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 420,
-      "height": 70
+      "width": 106.28515625,
+      "height": 54.4
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -2516,21 +2516,21 @@
     "_string": "Level",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 0,
-    "_fontSize": 29,
+    "_actualFontSize": 40,
+    "_fontSize": 32.5,
     "_fontFamily": "Arial",
-    "_lineHeight": 36,
+    "_lineHeight": 32.5,
     "_overflow": 0,
     "_enableWrapText": true,
     "_font": null,
     "_isSystemFontUsed": true,
     "_spacingX": 0,
     "_isItalic": false,
-    "_isBold": false,
+    "_isBold": true,
     "_isUnderline": false,
     "_underlineHeight": 2,
     "_cacheMode": 0,
-    "_enableOutline": false,
+    "_enableOutline": true,
     "_outlineColor": {
       "__type__": "cc.Color",
       "r": 0,
@@ -2986,7 +2986,7 @@
     "_lpos": {
       "__type__": "cc.Vec3",
       "x": 0,
-      "y": 11.3,
+      "y": 10,
       "z": 0
     },
     "_lrot": {
@@ -3024,8 +3024,8 @@
     "__prefab": null,
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 102.265625,
-      "height": 50.4
+      "width": 140.1572265625,
+      "height": 67
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -3057,21 +3057,21 @@
     "_string": "Close",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 40,
-    "_fontSize": 40,
+    "_actualFontSize": 50,
+    "_fontSize": 55,
     "_fontFamily": "Arial",
-    "_lineHeight": 40,
+    "_lineHeight": 55,
     "_overflow": 0,
     "_enableWrapText": true,
     "_font": null,
     "_isSystemFontUsed": true,
     "_spacingX": 0,
     "_isItalic": false,
-    "_isBold": false,
+    "_isBold": true,
     "_isUnderline": false,
     "_underlineHeight": 2,
     "_cacheMode": 0,
-    "_enableOutline": false,
+    "_enableOutline": true,
     "_outlineColor": {
       "__type__": "cc.Color",
       "r": 0,
@@ -3108,9 +3108,9 @@
     "__prefab": null,
     "_alignFlags": 41,
     "_target": null,
-    "_left": 97.3671875,
-    "_right": 97.3671875,
-    "_top": 20,
+    "_left": 78.42138671875,
+    "_right": 78.42138671875,
+    "_top": 15.5,
     "_bottom": 0,
     "_horizontalCenter": 0,
     "_verticalCenter": 0,
@@ -3559,8 +3559,8 @@
     "__prefab": null,
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 760,
-      "height": 70
+      "width": 117.412109375,
+      "height": 69.3
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -3592,7 +3592,7 @@
     "_string": "Guide",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 0,
+    "_actualFontSize": 44,
     "_fontSize": 44,
     "_fontFamily": "Arial",
     "_lineHeight": 55,
@@ -3691,8 +3691,8 @@
     "__prefab": null,
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 730,
-      "height": 390
+      "width": 1271.76611328125,
+      "height": 333.36
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -3724,7 +3724,7 @@
     "_string": "1. The turtle always prioritizes moving Straight, then turning Right, Left, and finally making a U-turn.\n\n2. Place walls to change the turtle's direction.\n\n3. The water current will carry the turtle in the direction of the flow and you cannot go against it.\n\n4. Collect enough points and reach the destination before running out of moves.\n\n5. Press GO.",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 0,
+    "_actualFontSize": 29,
     "_fontSize": 29,
     "_fontFamily": "Arial",
     "_lineHeight": 36,
@@ -3843,7 +3843,7 @@
     "_lpos": {
       "__type__": "cc.Vec3",
       "x": 0,
-      "y": 0,
+      "y": 10,
       "z": 0
     },
     "_lrot": {
@@ -3881,8 +3881,8 @@
     "__prefab": null,
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 190,
-      "height": 55
+      "width": 153.77294921875,
+      "height": 73.3
     },
     "_anchorPoint": {
       "__type__": "cc.Vec2",
@@ -3914,21 +3914,21 @@
     "_string": "Close",
     "_horizontalAlign": 1,
     "_verticalAlign": 1,
-    "_actualFontSize": 0,
-    "_fontSize": 40,
+    "_actualFontSize": 55,
+    "_fontSize": 55,
     "_fontFamily": "Arial",
-    "_lineHeight": 40,
+    "_lineHeight": 55,
     "_overflow": 0,
     "_enableWrapText": true,
     "_font": null,
     "_isSystemFontUsed": true,
     "_spacingX": 0,
     "_isItalic": false,
-    "_isBold": false,
+    "_isBold": true,
     "_isUnderline": false,
     "_underlineHeight": 2,
     "_cacheMode": 0,
-    "_enableOutline": false,
+    "_enableOutline": true,
     "_outlineColor": {
       "__type__": "cc.Color",
       "r": 0,
@@ -3965,9 +3965,9 @@
     "__prefab": null,
     "_alignFlags": 41,
     "_target": null,
-    "_left": 53.5,
-    "_right": 53.5,
-    "_top": 20,
+    "_left": 71.613525390625,
+    "_right": 71.613525390625,
+    "_top": 12.350000000000001,
     "_bottom": 0,
     "_horizontalCenter": 0,
     "_verticalCenter": 0,
