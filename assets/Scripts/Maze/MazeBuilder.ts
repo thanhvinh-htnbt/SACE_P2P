@@ -4,7 +4,8 @@ const { ccclass, property } = _decorator;
 
 @ccclass('MazeBuilder')
 export class MazeBuilder extends Component {
-    @property(Prefab) landPrefab: Prefab = null;    // ô sàn (Land, 128x128)
+    @property(Prefab) landPrefab: Prefab = null;    // ô sàn (Land, 128x128) — ô đi bộ
+    @property(Prefab) flowPrefab: Prefab = null;    // ô nước (Flow, 128x128) — ô dòng chảy
     @property(Prefab) wallHPrefab: Prefab = null;   // tường ngang (Wall-Horizontal) — cạnh trên/dưới
     @property(Prefab) wallVPrefab: Prefab = null;    // tường dọc  (Wall-Vertical)   — cạnh trái/phải
     @property(Node)   mazeRoot: Node = null;         // để trống = dùng chính node này
@@ -15,21 +16,31 @@ export class MazeBuilder extends Component {
         const root = this.mazeRoot ?? this.node;
         root.removeAllChildren();
 
+        // PASS 1 — TERRAIN (đáy): vẽ hết nền Flow / Land trước
         for (const cell of data.cells) {
-            // row tăng xuống dưới => y âm dần
-            const pos = new Vec3(cell.col * this.CELL_SIZE, -cell.row * this.CELL_SIZE, 0);
+            const pos = this.cellPos(cell.row, cell.col);
+            // Mỗi ô là Land (đi bộ) HOẶC Flow (nước) — chọn prefab theo cell.flow
+            const tilePrefab = cell.flow !== undefined ? this.flowPrefab : this.landPrefab;
+            const tile = instantiate(tilePrefab);
+            tile.setPosition(pos);
+            root.addChild(tile);
+        }
 
-            const land = instantiate(this.landPrefab);
-            land.setPosition(pos);
-            root.addChild(land);
-
-            // Cạnh chung chỉ vẽ 1 lần: vẽ tường Trên + Trái cho mọi ô
+        // PASS 2 — WALL (trên cùng): vẽ hết tường sau, để luôn nổi trên nền
+        for (const cell of data.cells) {
+            const pos = this.cellPos(cell.row, cell.col);
+            // Cạnh chung chỉ vẽ 1 lần: tường Trên + Trái cho mọi ô
             if (cell.walls[0]) this.spawnWall(root, pos, 'up');
             if (cell.walls[3]) this.spawnWall(root, pos, 'left');
-            // Viền ngoài cùng: cạnh Dưới của hàng cuối, cạnh Phải của cột cuối
+            // Viền ngoài cùng: cạnh Dưới hàng cuối, cạnh Phải cột cuối
             if (cell.row === data.rows - 1 && cell.walls[2]) this.spawnWall(root, pos, 'down');
             if (cell.col === data.cols - 1 && cell.walls[1]) this.spawnWall(root, pos, 'right');
         }
+    }
+
+    // row tăng xuống dưới => y âm dần
+    private cellPos(row: number, col: number): Vec3 {
+        return new Vec3(col * this.CELL_SIZE, -row * this.CELL_SIZE, 0);
     }
 
     // Wall-Horizontal / Wall-Vertical đã xoay sẵn trong prefab → chỉ cần đặt vị trí
