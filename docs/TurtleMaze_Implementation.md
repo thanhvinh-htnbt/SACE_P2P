@@ -23,7 +23,7 @@ export interface CellData {
     walls: [boolean, boolean, boolean, boolean];
     item?: ItemType;
     itemValue?: number;   // điểm nếu Food, số bước cộng nếu StepBonus
-    flow?: Dir;           // MỚI — ô dòng chảy + hướng chảy
+    flow?: Dir;           // MỚI — ô dòng chảy + hướng cuốn. undefined = ô cạn (Land).
 }
 
 // MỚI — kịch bản mutation
@@ -85,6 +85,7 @@ export interface MazeLevelData {
 | Luật đi của rùa | `TurtleAgent.chooseNextMove()` — [TurtleAgent.ts](../assets/Scripts/Player/TurtleAgent.ts) |
 | Nhặt item | `TurnManager.checkCellItem()` — [TurnManager.ts](../assets/Scripts/Manager/TurnManager.ts) |
 | Xét thắng/thua | `TurnManager.evaluateWinCondition()` — [TurnManager.ts](../assets/Scripts/Manager/TurnManager.ts) |
+| Luật đặt Wall theo địa hình (Flow–Flow ❌, còn lại ✅) | `LogicPutWall.canPlaceWall()` / `.placeWall()` — [LogicPutWall.ts](../assets/Scripts/Logic/LogicPutWall.ts) |
 
 ### ⚠️ Code đang lệch design đã chốt — SỬA SAU (đã thống nhất)
 
