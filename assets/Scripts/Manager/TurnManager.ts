@@ -188,16 +188,18 @@ export class TurnManager extends Component {
         TurnManager.eventTarget.emit('phase-changed', this.phase);
         const remain = this.getRemain();
         const pointCollected = this.state.scoreCollected;
-        const performanceScore = remain + pointCollected;
+        // Luật tính điểm: điểm tổng sau màn = số bước đã đi (maxSteps - remain)
+        // cộng điểm đã thu thập.
+        const totalScore = (this.data.winCondition.maxSteps - remain) + pointCollected;
         const bestCase = Math.max(1, this.data.rating?.bestCase ?? 1);
         TurnManager.eventTarget.emit('game-ended', {
             isWin,
             reason,
             remain,
             pointCollected,
-            performanceScore,
+            totalScore,
             bestCase,
-            ratingRatio: performanceScore / bestCase,
+            ratingRatio: totalScore / bestCase,
         });
     }
 
