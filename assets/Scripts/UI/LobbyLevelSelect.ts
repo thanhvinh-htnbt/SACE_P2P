@@ -56,7 +56,7 @@ export class LobbyLevelSelect extends Component {
             return;
         }
 
-        this.bindClick(this.playButton, () => this.playLatestUnlockedLevel());
+        this.bindClick(this.playButton, () => this.playSelectedLevel());
         this.bindClick(this.levelButton, () => this.openPopup(this.levelPopup));
         this.bindClick(this.guideButton, () => this.openPopup(this.guidePopup));
         this.bindClick(this.levelCloseButton, () => this.levelPopup.active = false);
@@ -132,7 +132,14 @@ export class LobbyLevelSelect extends Component {
         });
     }
 
-    private playLatestUnlockedLevel(): void {
+    private playSelectedLevel(): void {
+        const selectedName = LevelProgress.getSelectedLevel();
+        const selected = this.levels.find(level => level.name === selectedName);
+        if (selected) {
+            this.openLevel(selected.name);
+            return;
+        }
+
         const latest = this.getLatestUnlockedLevel();
         if (latest) this.openLevel(latest.name);
     }

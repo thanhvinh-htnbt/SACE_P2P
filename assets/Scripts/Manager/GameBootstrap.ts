@@ -61,16 +61,13 @@ export class GameBootstrap extends Component {
     @property(Prefab) flowPrefab: Prefab = null;
     @property(Prefab) wallHPrefab: Prefab = null;
     @property(Prefab) wallVPrefab: Prefab = null;
-    @property(SpriteFrame) flowArrowRight: SpriteFrame = null;
-    @property(SpriteFrame) flowArrowDown: SpriteFrame = null;
-    @property(SpriteFrame) flowArrowRightDown: SpriteFrame = null;
-    @property(SpriteFrame) flowArrowLeftDown: SpriteFrame = null;
     @property(Prefab) itemPrefab: Prefab = null;
     @property(Node) winDialogNode: Node = null;
     @property(Node) loseDialogNode: Node = null;
     @property(Node) levelHost: Node = null;
     @property(Node) turtleNode: Node = null;
     @property(TurnManager) turnManager: TurnManager = null;
+    @property(Label) currentLevelLabel: Label = null;
 
     private levelData: MazeLevelData = null;
     private levelNode: Node = null;
@@ -124,6 +121,7 @@ export class GameBootstrap extends Component {
 
             const data = JSON.parse(JSON.stringify(levelAsset.json)) as MazeLevelData;
             if (!this.isValidLevel(data)) return;
+            this.showCurrentLevel(data.levelId);
 
             const levelNode = this.buildLevel(data);
             if (!levelNode) return;
@@ -169,11 +167,19 @@ export class GameBootstrap extends Component {
         builder.flowPrefab = this.flowPrefab;
         builder.wallHPrefab = this.wallHPrefab;
         builder.wallVPrefab = this.wallVPrefab;
-        builder.flowArrowRight = this.flowArrowRight;
-        builder.flowArrowDown = this.flowArrowDown;
-        builder.flowArrowRightDown = this.flowArrowRightDown;
-        builder.flowArrowLeftDown = this.flowArrowLeftDown;
         return builder.build(data);
+    }
+
+    private showCurrentLevel(levelId: string): void {
+        if (!this.currentLevelLabel) {
+            console.warn('GameBootstrap is missing currentLevelLabel.');
+            return;
+        }
+
+        const numericLevel = Number(levelId);
+        this.currentLevelLabel.string = Number.isFinite(numericLevel)
+            ? `LEVEL: ${numericLevel}`
+            : `LEVEL: ${levelId}`;
     }
 
     /**
