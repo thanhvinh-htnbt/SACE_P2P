@@ -1,4 +1,4 @@
-import { _decorator, Component, Node, Prefab, instantiate, Vec3 } from 'cc';
+import { _decorator, Component, Node, Prefab, UITransform, instantiate, Vec3 } from 'cc';
 import { MazeLevelData, WallState } from './MazeData';
 const { ccclass, property } = _decorator;
 
@@ -11,6 +11,7 @@ export class MazeBuilder extends Component {
     @property(Node)   mazeRoot: Node = null;         // để trống = dùng chính node này
 
     readonly CELL_SIZE = 128;
+    readonly WALL_THICKNESS = 8;
 
     build(data: MazeLevelData) {
         const root = this.mazeRoot ?? this.node;
@@ -43,9 +44,10 @@ export class MazeBuilder extends Component {
         return new Vec3(col * this.CELL_SIZE, -row * this.CELL_SIZE, 0);
     }
 
-    // Wall-Horizontal / Wall-Vertical đã xoay sẵn trong prefab → chỉ cần đặt vị trí
+    // Tường ngang: 128x8. Tường dọc: 8x128.
     private spawnWall(root: Node, basePos: Vec3, side: 'up' | 'down' | 'left' | 'right') {
         const half = this.CELL_SIZE / 2;
+        const isHorizontal = side === 'up' || side === 'down';
         let prefab: Prefab;
         let offset: Vec3;
         switch (side) {
@@ -56,6 +58,16 @@ export class MazeBuilder extends Component {
         }
 
         const wall = instantiate(prefab);
+        wall.setRotationFromEuler(0, 0, 0);
+
+        const transform = wall.getComponent(UITransform);
+        if (transform) {
+            transform.setContentSize(
+                isHorizontal ? this.CELL_SIZE : this.WALL_THICKNESS,
+                isHorizontal ? this.WALL_THICKNESS : this.CELL_SIZE,
+            );
+        }
+
         wall.setPosition(basePos.clone().add(offset));
         root.addChild(wall);
     }
