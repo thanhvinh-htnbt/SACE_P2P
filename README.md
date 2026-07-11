@@ -40,8 +40,24 @@ Rùa phải đồng thời:
 
 HUD cập nhật `Point: current/target` ngay khi ăn điểm và `Remain: remaining/max` sau từng chuyển động có tính bước.
 
-Food được đặt sẵn trên map chỉ render label giá trị, không render background của prefab Item để Land/Flow bên dưới vẫn nhìn thấy rõ.
+Food được đặt sẵn trên map render bằng icon, không dùng label hoặc background nên Land/Flow bên dưới vẫn nhìn thấy rõ:
+
+| Điểm | Icon |
+|---:|---|
+| 1 | `swim_float` |
+| 2 | `shell` |
+| 3 | `icecream` |
+| 4 | `coconut` |
+| 5 | `compass` |
+| 6 | `snail` |
+| 7 | `starfish` |
+
+Mỗi icon có animation scale cosine lặp vô hạn `0.8 → 1 → 0.8`, mỗi chiều mặc định `0.6s`. Các icon được lệch pha nhẹ để chuyển động trên map tự nhiên hơn.
 
 Rùa tween vị trí và hướng nhìn bằng easing `sineInOut` sau mỗi lần di chuyển. Góc quay luôn dùng cung ngắn nhất giữa hướng cũ và hướng mới; tween thường kéo dài `0.45s`, tween Flow `0.28s`.
+
+Animation rùa dùng 6 frame `turtle_1..6`. `TurtleFrameAnimator` trải đều toàn bộ frame theo duration của từng tween, hỗ trợ tùy chọn ping-pong và tự fallback load từ `resources/anim` nếu Inspector chưa gán đủ frame.
+
+Khi idle, rùa có animation “thở” bằng scale: tăng mượt từ `(1.176471, 1.176471)` tới `(1.3, 1.3)`, sau đó giảm mượt về mức nhỏ nhất và lặp lại. Mỗi nửa chu kỳ mặc định là `0.65s`; khi rùa chạy, breathing tạm dừng và scale trở về mức nhỏ nhất.
 
 Khi bắt đầu level, rùa không giữ một hướng cố định có thể chĩa vào tường. Hướng khởi tạo được chọn từ cạnh mở đầu tiên theo luật thẳng → phải → trái → quay đầu, sau đó đầu rùa tween sang hướng hợp lệ trong `0.4s`.
