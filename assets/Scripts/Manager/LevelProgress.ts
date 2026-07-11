@@ -3,6 +3,7 @@ import { sys } from 'cc';
 /** Trạng thái chọn màn và mở khóa, dùng chung giữa Lobby và gameplay. */
 export class LevelProgress {
     private static readonly UNLOCKED_LEVELS_KEY = 'unlocked_maze_levels';
+    private static readonly SELECTED_LEVEL_KEY = 'selected_maze_level';
     private static readonly DEFAULT_LEVEL = 'level_01';
     private static levelOrder: string[] = [];
     private static selectedLevel = LevelProgress.DEFAULT_LEVEL;
@@ -21,15 +22,19 @@ export class LevelProgress {
     }
 
     static getSelectedLevel(): string {
-        if (this.isAvailable(this.selectedLevel) && this.isUnlocked(this.selectedLevel)) {
-            return this.selectedLevel;
+        const savedLevel = sys.localStorage.getItem(this.SELECTED_LEVEL_KEY);
+        const candidate = savedLevel ?? this.selectedLevel;
+        if (this.isAvailable(candidate)) {
+            this.selectedLevel = candidate;
+            return candidate;
         }
         return this.levelOrder[0] ?? this.DEFAULT_LEVEL;
     }
 
     static selectLevel(levelName: string): boolean {
-        if (!this.isAvailable(levelName) || !this.isUnlocked(levelName)) return false;
+        if (!this.isAvailable(levelName)) return false;
         this.selectedLevel = levelName;
+        sys.localStorage.setItem(this.SELECTED_LEVEL_KEY, levelName);
         return true;
     }
 
