@@ -196,7 +196,7 @@
     "_priority": 0,
     "_fov": 45,
     "_fovAxis": 0,
-    "_orthoHeight": 687.9564032697548,
+    "_orthoHeight": 704.6808510638298,
     "_near": 0,
     "_far": 2000,
     "_color": {
@@ -524,7 +524,7 @@
     },
     "_lscale": {
       "__type__": "cc.Vec3",
-      "x": 1.1764705882352942,
+      "x": 1.176471,
       "y": 1.1764705882352942,
       "z": 1
     },
@@ -621,7 +621,24 @@
       "__uuid__": "fd4dd35d-d91d-44a8-9853-5bc94c7c7f0a@f9941",
       "__expectedType__": "cc.SpriteFrame"
     },
-    "frameInterval": 0.1,
+    "frame4": {
+      "__uuid__": "74ed2399-3a51-490a-830b-4b18795d5160@f9941",
+      "__expectedType__": "cc.SpriteFrame"
+    },
+    "frame5": {
+      "__uuid__": "f847cfc8-df7c-4d45-9ea3-e1a22f4ec014@f9941",
+      "__expectedType__": "cc.SpriteFrame"
+    },
+    "frame6": {
+      "__uuid__": "f05c5bda-1d46-4b10-80d7-ea7463fa1e2c@f9941",
+      "__expectedType__": "cc.SpriteFrame"
+    },
+    "frameInterval": 0.075,
+    "pingPong": false,
+    "returnToIdleOnStop": true,
+    "idleMinScale": 1.176471,
+    "idleMaxScale": 1.3,
+    "idleHalfCycle": 0.65,
     "_id": "fbWtvtlItBSJCxA1UT6vg2"
   },
   {

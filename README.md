@@ -44,4 +44,8 @@ Food được đặt sẵn trên map chỉ render label giá trị, không rende
 
 Rùa tween vị trí và hướng nhìn bằng easing `sineInOut` sau mỗi lần di chuyển. Góc quay luôn dùng cung ngắn nhất giữa hướng cũ và hướng mới; tween thường kéo dài `0.45s`, tween Flow `0.28s`.
 
+Animation rùa dùng 6 frame `turtle_1..6`. `TurtleFrameAnimator` trải đều toàn bộ frame theo duration của từng tween, hỗ trợ tùy chọn ping-pong và tự fallback load từ `resources/anim` nếu Inspector chưa gán đủ frame.
+
+Khi idle, rùa có animation “thở” bằng scale: tăng mượt từ `(1.176471, 1.176471)` tới `(1.3, 1.3)`, sau đó giảm mượt về mức nhỏ nhất và lặp lại. Mỗi nửa chu kỳ mặc định là `0.65s`; khi rùa chạy, breathing tạm dừng và scale trở về mức nhỏ nhất.
+
 Khi bắt đầu level, rùa không giữ một hướng cố định có thể chĩa vào tường. Hướng khởi tạo được chọn từ cạnh mở đầu tiên theo luật thẳng → phải → trái → quay đầu, sau đó đầu rùa tween sang hướng hợp lệ trong `0.4s`.

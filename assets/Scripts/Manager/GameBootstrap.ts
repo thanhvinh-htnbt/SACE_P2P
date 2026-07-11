@@ -180,7 +180,7 @@ export class GameBootstrap extends Component {
         const duration = state.isFlowMove ? FLOW_TWEEN_DURATION : MOVE_TWEEN_DURATION;
 
         Tween.stopAllByTarget(node);
-        this.turtleAnimator?.play();
+        this.turtleAnimator?.play(duration);
         tween(node)
             .to(duration, {
                 position: targetPosition,
