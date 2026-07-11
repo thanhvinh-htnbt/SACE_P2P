@@ -7,7 +7,9 @@ const { ccclass, property } = _decorator;
 @ccclass('GameBootstrap')
 export class GameBootstrap extends Component {
     @property(Prefab) levelPrefab: Prefab = null;
+    //  @property(Prefab) levelPrefab: Prefab = null;
     @property(Node) levelHost: Node = null;
+    @property(Node) turtleNode: Node = null;
     @property(TurnManager) turnManager: TurnManager = null;
     @property levelName: string = 'level_01';
 
@@ -25,6 +27,14 @@ export class GameBootstrap extends Component {
 
             (this.levelHost ?? this.node).addChild(levelNode);
             mazeBuilder.build(data);
+
+            if (!this.turtleNode) {
+                console.error('GameBootstrap is missing turtleNode');
+                return;
+            }
+
+            this.turtleNode.setParent(levelNode, false);
+            this.turtleNode.setPosition(mazeBuilder.cellPos(data.start.row, data.start.col));
             // this.turnManager.init(data);
         });
     }

@@ -40,7 +40,7 @@ export class MazeBuilder extends Component {
     }
 
     // row tăng xuống dưới => y âm dần
-    private cellPos(row: number, col: number): Vec3 {
+    cellPos(row: number, col: number): Vec3 {
         return new Vec3(col * this.CELL_SIZE, -row * this.CELL_SIZE, 0);
     }
 
