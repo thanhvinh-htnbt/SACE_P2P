@@ -2,12 +2,12 @@ import { _decorator, Component, JsonAsset, Label, resources } from 'cc';
 import { MazeLevelData } from '../Maze/MazeData';
 import { GameState } from './GameState';
 import { TurnManager } from './TurnManager';
+import { LevelProgress } from './LevelProgress';
 const { ccclass, property } = _decorator;
 
 @ccclass('StepRemain')
 export class StepRemain extends Component {
     @property(Label) stepRemain: Label = null;
-    @property levelName = 'level_01';
 
     private maxSteps = 0;
     private stepsUsed = 0;
@@ -24,9 +24,10 @@ export class StepRemain extends Component {
 
     start() {
         this.render();
-        resources.load(`levels/${this.levelName}`, JsonAsset, (err, asset) => {
+        const levelName = LevelProgress.getSelectedLevel();
+        resources.load(`levels/${levelName}`, JsonAsset, (err, asset) => {
             if (err) {
-                console.error(`StepRemain cannot load ${this.levelName}`, err);
+                console.error(`StepRemain cannot load ${levelName}`, err);
                 return;
             }
             this.maxSteps = (asset.json as MazeLevelData).winCondition.maxSteps;
