@@ -27,6 +27,7 @@ import { GameAudio } from './GameAudio';
 import { TurtleFrameAnimator } from '../Player/TurtleFrameAnimator';
 import { LevelProgress } from './LevelProgress';
 import { PopupDialog } from '../UI/Dialog/PopupDialog';
+import { YouWinDialog } from '../UI/Dialog/YouWinDialog';
 import { GoalAnimator } from '../Maze/GoalAnimator';
 const { ccclass, property } = _decorator;
 
@@ -232,11 +233,11 @@ export class GameBootstrap extends Component {
         this.turtleNode.setPosition(col * CELL_SIZE, -row * CELL_SIZE, 0);
     }
 
-    private onGameEnded(result: { isWin: boolean }) {
+    private onGameEnded(result: { isWin: boolean; totalScore: number; bestCase: number }) {
         if (result.isWin && this.currentLevelName) {
             LevelProgress.completeLevel(this.currentLevelName);
         }
-        this.showResultDialog(result.isWin);
+        this.showResultDialog(result.isWin, result.totalScore, result.bestCase);
     }
 
     private spawnGoalMarker(levelNode: Node, data: MazeLevelData) {
@@ -295,12 +296,13 @@ export class GameBootstrap extends Component {
             .start();
     }
 
-    private showResultDialog(isWin: boolean) {
+    private showResultDialog(isWin: boolean, totalScore: number, bestCase: number) {
         const dialogNode = isWin ? this.winDialogNode : this.loseDialogNode;
         if (!dialogNode) {
             console.error(`GameBootstrap is missing ${isWin ? 'Win' : 'Lose'}Dialog node`);
             return;
         }
+        dialogNode.getComponent(YouWinDialog)?.setFinalScore(totalScore, bestCase);
         const dialog = dialogNode.getComponent(PopupDialog);
         if (dialog) dialog.showImmediately();
     }

@@ -50,7 +50,7 @@ export class CurrentPoint extends Component {
     private render() {
         if (this.currentPoint) {
             this.currentPoint.string = this.aim > 0
-                ? `${this.point}/${this.aim}`
+                ? `${this.point}`
                 : `${this.point}/--`;
         }
     }

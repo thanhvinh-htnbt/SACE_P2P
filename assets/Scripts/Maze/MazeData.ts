@@ -28,7 +28,7 @@ export interface WinCondition {
 }
 
 export interface RatingConfig {
-    bestCase: number;      // điểm tổng tốt nhất dự kiến: (maxSteps - remain) + pointCollected
+    bestCase: number;      // điểm tổng tốt nhất dự kiến: remain + pointCollected
 }
 
 /** Số item người chơi được cấp đầu màn để tự đặt trong lúc chơi. */
