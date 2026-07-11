@@ -38,10 +38,11 @@ export class PointItemAnimator extends Component {
     }
 
     onDisable() {
-        this.applyScale(this.minScale);
+        this.elapsed = 0;
     }
 
     private applyScale(scale: number) {
+        if (!this.node?.isValid) return;
         this.node.setScale(scale, scale, this.node.scale.z);
     }
 }

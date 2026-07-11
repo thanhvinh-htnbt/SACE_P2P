@@ -3,6 +3,7 @@ import { Inventory, ItemType, MazeLevelData } from '../Maze/MazeData';
 import { Dir } from '../Maze/MazeConstants';
 import { DraggableItem, InventoryItemKind, ItemDropRequest } from './DraggableItem';
 import { TurnManager, TurnPhase } from './TurnManager';
+import { LevelProgress } from './LevelProgress';
 const { ccclass, property } = _decorator;
 
 @ccclass('ItemSpace')
@@ -12,10 +13,11 @@ export class ItemSpace extends Component {
     @property(Prefab) wallVPrefab: Prefab = null;
     @property(Prefab) foodPrefab: Prefab = null;
     @property(Prefab) stepBonusPrefab: Prefab = null;
-    @property levelName = 'level_01';
     @property columns = 2;
     @property spacingX = 130;
     @property spacingY = 150;
+
+    private levelData: MazeLevelData = null;
 
     onEnable() {
         DraggableItem.events.on('drop', this.onItemDrop, this);
@@ -35,12 +37,14 @@ export class ItemSpace extends Component {
     }
 
     start() {
-        resources.load(`levels/${this.levelName}`, JsonAsset, (err, asset) => {
+        const selectedLevel = LevelProgress.getSelectedLevel();
+        resources.load(`levels/${selectedLevel}`, JsonAsset, (err, asset) => {
             if (err) {
-                console.error(`ItemSpace cannot load ${this.levelName}`, err);
+                console.error(`ItemSpace cannot load ${selectedLevel}`, err);
                 return;
             }
-            this.populate((asset.json as MazeLevelData).inventory);
+            this.levelData = asset.json as MazeLevelData;
+            this.populate(this.levelData.inventory);
         });
     }
 
@@ -80,6 +84,8 @@ export class ItemSpace extends Component {
     }
 
     private onItemDrop(request: ItemDropRequest) {
+        if (!this.levelData) return;
+
         const map = this.findMapRoot(director.getScene());
         if (!map) return;
 
@@ -95,7 +101,8 @@ export class ItemSpace extends Component {
             const col = Math.round(local.x / cellSize);
             const boundary = Math.round((cellSize / 2 - local.y) / cellSize);
             // Chỉ đặt ở cạnh giữa hai ô; viền ngoài đã là wall cố định.
-            if (col < 0 || col >= 8 || boundary <= 0 || boundary >= 6) return;
+            if (col < 0 || col >= this.levelData.cols
+                || boundary <= 0 || boundary >= this.levelData.rows) return;
             x = col * cellSize;
             y = cellSize / 2 - boundary * cellSize;
             target = map.getChildByName('Walls') ?? map;
@@ -103,7 +110,8 @@ export class ItemSpace extends Component {
         } else if (request.kind === 'wallV') {
             const boundary = Math.round((local.x + cellSize / 2) / cellSize);
             const row = Math.round(-local.y / cellSize);
-            if (boundary <= 0 || boundary >= 8 || row < 0 || row >= 6) return;
+            if (boundary <= 0 || boundary >= this.levelData.cols
+                || row < 0 || row >= this.levelData.rows) return;
             x = -cellSize / 2 + boundary * cellSize;
             y = -row * cellSize;
             target = map.getChildByName('Walls') ?? map;
@@ -111,7 +119,8 @@ export class ItemSpace extends Component {
         } else {
             const col = Math.round(local.x / cellSize);
             const row = Math.round(-local.y / cellSize);
-            if (col < 0 || col >= 8 || row < 0 || row >= 6) return;
+            if (col < 0 || col >= this.levelData.cols
+                || row < 0 || row >= this.levelData.rows) return;
             x = col * cellSize;
             y = -row * cellSize;
         }
@@ -157,7 +166,7 @@ export class ItemSpace extends Component {
     }
 
     private findMapRoot(node: Node): Node | null {
-        if (/^Level_\d+$/.test(node.name)
+        if (/^Level_\d+$/i.test(node.name)
             && node.getChildByName('Terrain')
             && node.getChildByName('Walls')) return node;
 

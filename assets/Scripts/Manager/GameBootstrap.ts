@@ -15,15 +15,20 @@ import {
 import { TurnManager } from '../Manager/TurnManager';
 import { GameState } from '../Manager/GameState';
 import { ItemType, MazeLevelData } from '../Maze/MazeData';
+import { MazeBuilder } from '../Maze/MazeBuilder';
 import { BrokenWall } from '../Player/TurtleAgent';
 import { BreakableWallView } from '../Maze/BreakableWallView';
 import { PointItemAnimator } from '../Maze/PointItemAnimator';
 import { StartRun } from './StartRun';
 import { GameAudio } from './GameAudio';
 import { TurtleFrameAnimator } from '../Player/TurtleFrameAnimator';
+import { LevelProgress } from './LevelProgress';
+import { PopupDialog } from '../UI/Dialog/PopupDialog';
 const { ccclass, property } = _decorator;
 
 const CELL_SIZE = 128;
+const VIEWPORT_ROWS = 6;
+const VIEWPORT_COLS = 8;
 const MOVE_TWEEN_DURATION = 0.45;
 const FLOW_TWEEN_DURATION = 0.28;
 const POINT_ITEM_NAMES = [
@@ -37,12 +42,17 @@ interface TurtleViewState extends GameState {
 
 @ccclass('GameBootstrap')
 export class GameBootstrap extends Component {
-    @property(Prefab) levelPrefab: Prefab = null;
+    @property(Prefab) mazeBgPrefab: Prefab = null;
+    @property(Prefab) landPrefab: Prefab = null;
+    @property(Prefab) flowPrefab: Prefab = null;
+    @property(Prefab) wallHPrefab: Prefab = null;
+    @property(Prefab) wallVPrefab: Prefab = null;
     @property(Prefab) itemPrefab: Prefab = null;
+    @property(Node) winDialogNode: Node = null;
+    @property(Node) loseDialogNode: Node = null;
     @property(Node) levelHost: Node = null;
     @property(Node) turtleNode: Node = null;
     @property(TurnManager) turnManager: TurnManager = null;
-    @property levelName: string = 'level_01';
 
     private levelData: MazeLevelData = null;
     private levelNode: Node = null;
@@ -50,27 +60,24 @@ export class GameBootstrap extends Component {
     private readonly pointItemFrames = new Map<number, SpriteFrame>();
     private turtleAnimator: TurtleFrameAnimator = null;
     private isReady = false;
+    private currentLevelName = '';
 
     onLoad() {
         GameAudio.ensure();
         StartRun.eventTarget.on('start-run', this.onStartRun, this);
         TurnManager.eventTarget.on('turtle-moved', this.onTurtleMoved, this);
         TurnManager.eventTarget.on('walls-broken', this.onWallsBroken, this);
+        TurnManager.eventTarget.on('game-ended', this.onGameEnded, this);
     }
 
     onDestroy() {
         StartRun.eventTarget.off('start-run', this.onStartRun, this);
         TurnManager.eventTarget.off('turtle-moved', this.onTurtleMoved, this);
-        this.turtleAnimator?.stop();
         TurnManager.eventTarget.off('walls-broken', this.onWallsBroken, this);
+        TurnManager.eventTarget.off('game-ended', this.onGameEnded, this);
     }
 
     start() {
-        if (!this.levelPrefab) {
-            console.error('GameBootstrap is missing levelPrefab');
-            return;
-        }
-
         // TurnManager nằm cùng GameController; vẫn cho phép kéo reference từ Inspector.
         this.turnManager ??= this.getComponent(TurnManager);
         if (!this.turnManager) {
@@ -78,35 +85,38 @@ export class GameBootstrap extends Component {
             return;
         }
 
-        const host = this.levelHost ?? this.node;
-        // Tái sử dụng prefab map đã đặt sẵn trong scene để không tạo hai map chồng nhau.
-        const levelNode = host.children.find(child => /^Level_\d+$/.test(child.name))
-            ?? instantiate(this.levelPrefab);
-        if (!levelNode.parent) host.addChild(levelNode);
-        this.levelNode = levelNode;
-
-        // Prefab tĩnh đã chứa sẵn Terrain/Walls.
+        // Maze được dựng runtime từ JSON; prefab cũ trong LevelHost sẽ được thay thế.
         if (!this.turtleNode) {
             console.error('GameBootstrap is missing turtleNode');
             return;
         }
 
-        // Map là prefab tĩnh. Đưa rùa vào map ngay để luôn render trên cùng.
-        this.turtleNode.setParent(levelNode, false);
         this.turtleAnimator = this.turtleNode.getComponent(TurtleFrameAnimator)
             ?? this.turtleNode.addComponent(TurtleFrameAnimator);
 
-        // JSON chỉ cung cấp start và gameplay data, không dùng để dựng map.
-        resources.load(`levels/${this.levelName}`, JsonAsset, (err, asset) => {
-            if (err) { console.error(err); return; }
-            const data = asset.json as MazeLevelData;
+        // Gameplay chỉ nạp JSON của level đã được chọn ở Lobby.
+        this.currentLevelName = LevelProgress.getSelectedLevel();
+        resources.load(`levels/${this.currentLevelName}`, JsonAsset, (err, levelAsset) => {
+            if (err) {
+                console.error(`GameBootstrap cannot load ${this.currentLevelName}.json`, err);
+                return;
+            }
+
+            const data = JSON.parse(JSON.stringify(levelAsset.json)) as MazeLevelData;
+            if (!this.isValidLevel(data)) return;
+
+            const levelNode = this.buildLevel(data);
+            if (!levelNode) return;
 
             this.levelData = data;
+            this.levelNode = levelNode;
+            this.turtleNode.setParent(levelNode, false);
             this.setTurtlePosition(data.start.row, data.start.col);
             // Hướng mặc định của gameplay là Right; sau init sẽ tween sang hướng mở hợp lệ.
             this.turtleNode.setRotationFromEuler(0, 0, this.facingToAngle(1));
             this.loadPointItemFrames(() => {
                 this.spawnCellItems(levelNode, data);
+                this.turtleNode.setSiblingIndex(levelNode.children.length - 1);
                 const initialState = this.turnManager.init(data);
                 this.tweenInitialFacing(initialState.facing);
                 this.isReady = true;
@@ -114,6 +124,75 @@ export class GameBootstrap extends Component {
         });
     }
 
+    private buildLevel(data: MazeLevelData): Node | null {
+        if (!this.mazeBgPrefab || !this.landPrefab || !this.flowPrefab
+            || !this.wallHPrefab || !this.wallVPrefab) {
+            console.error('GameBootstrap is missing MazeBg, Land, Flow, or Wall prefabs.');
+            return null;
+        }
+
+        const host = this.levelHost ?? this.node;
+        for (const oldLevel of host.children.filter(child => /^Level_\d+$/.test(child.name))) {
+            if (this.turtleNode.parent === oldLevel) this.turtleNode.setParent(host, true);
+            oldLevel.destroy();
+        }
+
+        const levelNode = new Node(`Level_${data.levelId}`);
+        levelNode.layer = host.layer;
+        host.addChild(levelNode);
+        this.fitLevelToViewport(levelNode, data);
+
+        const builder = levelNode.addComponent(MazeBuilder);
+        builder.mazeBgPrefab = this.mazeBgPrefab;
+        builder.landPrefab = this.landPrefab;
+        builder.flowPrefab = this.flowPrefab;
+        builder.wallHPrefab = this.wallHPrefab;
+        builder.wallVPrefab = this.wallVPrefab;
+        return builder.build(data);
+    }
+
+    /**
+     * Giữ vùng chơi bằng 8x6 ô. Maze lớn hơn được scale đồng đều và căn giữa,
+     * còn maze 8x6 hoặc nhỏ hơn giữ nguyên tỉ lệ 1:1.
+     */
+    private fitLevelToViewport(levelNode: Node, data: MazeLevelData): void {
+        const scale = Math.min(
+            1,
+            VIEWPORT_COLS / data.cols,
+            VIEWPORT_ROWS / data.rows,
+        );
+        levelNode.setScale(scale, scale, 1);
+
+        if (scale >= 1) {
+            levelNode.setPosition(0, 0, 0);
+            return;
+        }
+
+        // Origin của maze nằm tại tâm ô trên-trái, không phải tại mép ngoài.
+        const viewportCenterX = (VIEWPORT_COLS - 1) * CELL_SIZE / 2;
+        const viewportCenterY = -(VIEWPORT_ROWS - 1) * CELL_SIZE / 2;
+        const mazeCenterX = (data.cols - 1) * CELL_SIZE * scale / 2;
+        const mazeCenterY = -(data.rows - 1) * CELL_SIZE * scale / 2;
+        levelNode.setPosition(
+            viewportCenterX - mazeCenterX,
+            viewportCenterY - mazeCenterY,
+            0,
+        );
+    }
+
+    private isValidLevel(data: MazeLevelData): boolean {
+        const valid = !!data
+            && Number.isInteger(data.rows)
+            && Number.isInteger(data.cols)
+            && data.rows > 0
+            && data.cols > 0
+            && Array.isArray(data.cells)
+            && data.cells.length === data.rows * data.cols;
+        if (!valid) console.error(`${this.currentLevelName}.json has invalid maze data.`);
+        return valid;
+    }
+
+    // Bấm Start một lần để rùa tự chạy theo luật hiện tại.
     private onStartRun() {
         if (!this.isReady || !this.turnManager) return;
         void this.turnManager.runAutomatically();
@@ -134,6 +213,23 @@ export class GameBootstrap extends Component {
 
     private setTurtlePosition(row: number, col: number) {
         this.turtleNode.setPosition(col * CELL_SIZE, -row * CELL_SIZE, 0);
+    }
+
+    private onGameEnded(result: { isWin: boolean }) {
+        if (result.isWin && this.currentLevelName) {
+            LevelProgress.completeLevel(this.currentLevelName);
+        }
+        this.showResultDialog(result.isWin);
+    }
+
+    private showResultDialog(isWin: boolean) {
+        const dialogNode = isWin ? this.winDialogNode : this.loseDialogNode;
+        if (!dialogNode) {
+            console.error(`GameBootstrap is missing ${isWin ? 'Win' : 'Lose'}Dialog node`);
+            return;
+        }
+        const dialog = dialogNode.getComponent(PopupDialog);
+        if (dialog) dialog.showImmediately();
     }
 
     private onWallsBroken(walls: BrokenWall[]) {
@@ -213,7 +309,7 @@ export class GameBootstrap extends Component {
         return (2 - facing) * 90;
     }
 
-    // Terrain/Walls vẫn nằm sẵn trong Level prefab; chỉ item gameplay được đọc từ JSON.
+    // Item cũng được dựng từ JSON và đặt giữa layer Terrain với Walls.
     private spawnCellItems(levelNode: Node, data: MazeLevelData) {
         if (!this.itemPrefab) {
             console.warn('GameBootstrap is missing itemPrefab; cell values will not be shown');

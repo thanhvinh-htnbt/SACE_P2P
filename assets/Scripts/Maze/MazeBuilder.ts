@@ -4,6 +4,7 @@ const { ccclass, property } = _decorator;
 
 @ccclass('MazeBuilder')
 export class MazeBuilder extends Component {
+    @property(Prefab) mazeBgPrefab: Prefab = null;
     @property(Prefab) landPrefab: Prefab = null;    // ô sàn (Land, 128x128) — ô đi bộ
     @property(Prefab) flowPrefab: Prefab = null;    // ô nước (Flow, 128x128) — ô dòng chảy
     @property(Prefab) wallHPrefab: Prefab = null;   // tường ngang (Wall-Horizontal) — cạnh trên/dưới
@@ -13,9 +14,27 @@ export class MazeBuilder extends Component {
     readonly CELL_SIZE = 128;
     readonly WALL_THICKNESS = 8;
 
-    build(data: MazeLevelData) {
+    build(data: MazeLevelData): Node {
         const root = this.mazeRoot ?? this.node;
         root.removeAllChildren();
+
+        if (!this.mazeBgPrefab || !this.landPrefab || !this.flowPrefab
+            || !this.wallHPrefab || !this.wallVPrefab) {
+            throw new Error('MazeBuilder is missing background, terrain, or wall prefabs.');
+        }
+
+        const mazeBackground = instantiate(this.mazeBgPrefab);
+        mazeBackground.name = 'MazeBg';
+        this.setLayerRecursively(mazeBackground, root.layer);
+        this.resizeMazeBackground(mazeBackground, data.rows, data.cols);
+        root.addChild(mazeBackground);
+
+        const terrainRoot = new Node('Terrain');
+        const wallsRoot = new Node('Walls');
+        terrainRoot.layer = root.layer;
+        wallsRoot.layer = root.layer;
+        root.addChild(terrainRoot);
+        root.addChild(wallsRoot);
 
         // PASS 1 — TERRAIN (đáy): vẽ hết nền Flow / Land trước
         for (const cell of data.cells) {
@@ -23,20 +42,36 @@ export class MazeBuilder extends Component {
             // Mỗi ô là Land (đi bộ) HOẶC Flow (nước) — chọn prefab theo cell.flow
             const tilePrefab = cell.flow !== undefined ? this.flowPrefab : this.landPrefab;
             const tile = instantiate(tilePrefab);
+            tile.name = cell.flow !== undefined
+                ? `Flow_${cell.row}_${cell.col}`
+                : `Land_${cell.row}_${cell.col}`;
+            if (cell.flow !== undefined) {
+                tile.setRotationFromEuler(0, 0, this.flowToAngle(cell.flow));
+            }
             tile.setPosition(pos);
-            root.addChild(tile);
+            terrainRoot.addChild(tile);
         }
 
         // PASS 2 — WALL (trên cùng): vẽ hết tường sau, để luôn nổi trên nền
         for (const cell of data.cells) {
             const pos = this.cellPos(cell.row, cell.col);
             // Cạnh chung chỉ vẽ 1 lần: tường Trên + Trái cho mọi ô
-            if (cell.walls[0] !== WallState.NONE) this.spawnWall(root, pos, 'up');
-            if (cell.walls[3] !== WallState.NONE) this.spawnWall(root, pos, 'left');
+            if (cell.walls[0] !== WallState.NONE) {
+                this.spawnWall(wallsRoot, pos, 'up', `Wall_up_${cell.row}_${cell.col}`);
+            }
+            if (cell.walls[3] !== WallState.NONE) {
+                this.spawnWall(wallsRoot, pos, 'left', `Wall_left_${cell.row}_${cell.col}`);
+            }
             // Viền ngoài cùng: cạnh Dưới hàng cuối, cạnh Phải cột cuối
-            if (cell.row === data.rows - 1 && cell.walls[2] !== WallState.NONE) this.spawnWall(root, pos, 'down');
-            if (cell.col === data.cols - 1 && cell.walls[1] !== WallState.NONE) this.spawnWall(root, pos, 'right');
+            if (cell.row === data.rows - 1 && cell.walls[2] !== WallState.NONE) {
+                this.spawnWall(wallsRoot, pos, 'down', `Wall_up_${data.rows}_${cell.col}`);
+            }
+            if (cell.col === data.cols - 1 && cell.walls[1] !== WallState.NONE) {
+                this.spawnWall(wallsRoot, pos, 'right', `Wall_left_${cell.row}_${data.cols}`);
+            }
         }
+
+        return root;
     }
 
     // row tăng xuống dưới => y âm dần
@@ -45,7 +80,12 @@ export class MazeBuilder extends Component {
     }
 
     // Tường ngang: 128x8. Tường dọc: 8x128.
-    private spawnWall(root: Node, basePos: Vec3, side: 'up' | 'down' | 'left' | 'right') {
+    private spawnWall(
+        root: Node,
+        basePos: Vec3,
+        side: 'up' | 'down' | 'left' | 'right',
+        nodeName: string,
+    ) {
         const half = this.CELL_SIZE / 2;
         const isHorizontal = side === 'up' || side === 'down';
         let prefab: Prefab;
@@ -58,17 +98,50 @@ export class MazeBuilder extends Component {
         }
 
         const wall = instantiate(prefab);
-        wall.setRotationFromEuler(0, 0, 0);
-
-        const transform = wall.getComponent(UITransform);
-        if (transform) {
-            transform.setContentSize(
-                isHorizontal ? this.CELL_SIZE : this.WALL_THICKNESS,
-                isHorizontal ? this.WALL_THICKNESS : this.CELL_SIZE,
-            );
-        }
+        wall.name = nodeName;
+        // Hai prefab đã có orientation đúng; giữ nguyên rotation gốc của prefab.
+        this.setWallSizeRecursively(wall);
 
         wall.setPosition(basePos.clone().add(offset));
         root.addChild(wall);
+    }
+
+    /** Flow prefab mặc định hướng sang phải. Dir: Up=0, Right=1, Down=2, Left=3. */
+    private flowToAngle(flow: number): number {
+        switch (flow) {
+            case 0: return 90;
+            case 1: return 0;
+            case 2: return -90;
+            case 3: return 180;
+            default: return 0;
+        }
+    }
+
+    private setWallSizeRecursively(node: Node): void {
+        const transform = node.getComponent(UITransform);
+        if (transform) transform.setContentSize(this.CELL_SIZE, this.WALL_THICKNESS);
+        for (const child of node.children) this.setWallSizeRecursively(child);
+    }
+
+    private resizeMazeBackground(background: Node, rows: number, cols: number): void {
+        const width = cols * this.CELL_SIZE;
+        const height = rows * this.CELL_SIZE;
+        this.setSizeRecursively(background, width, height);
+        background.setPosition(
+            (cols - 1) * this.CELL_SIZE / 2,
+            -(rows - 1) * this.CELL_SIZE / 2,
+            0,
+        );
+    }
+
+    private setSizeRecursively(node: Node, width: number, height: number): void {
+        const transform = node.getComponent(UITransform);
+        if (transform) transform.setContentSize(width, height);
+        for (const child of node.children) this.setSizeRecursively(child, width, height);
+    }
+
+    private setLayerRecursively(node: Node, layer: number): void {
+        node.layer = layer;
+        for (const child of node.children) this.setLayerRecursively(child, layer);
     }
 }

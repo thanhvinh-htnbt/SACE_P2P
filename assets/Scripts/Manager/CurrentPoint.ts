@@ -2,12 +2,12 @@ import { _decorator, Component, JsonAsset, Label, resources } from 'cc';
 import { ItemType, MazeLevelData } from '../Maze/MazeData';
 import { GameState } from './GameState';
 import { TurnManager } from './TurnManager';
+import { LevelProgress } from './LevelProgress';
 const { ccclass, property } = _decorator;
 
 @ccclass('CurrentPoint')
 export class CurrentPoint extends Component {
     @property(Label) currentPoint: Label = null;
-    @property levelName = 'level_01';
     private point = 0;
     private aim = 0;
 
@@ -23,9 +23,10 @@ export class CurrentPoint extends Component {
 
     start() {
         this.render();
-        resources.load(`levels/${this.levelName}`, JsonAsset, (err, asset) => {
+        const levelName = LevelProgress.getSelectedLevel();
+        resources.load(`levels/${levelName}`, JsonAsset, (err, asset) => {
             if (err) {
-                console.error(`CurrentPoint cannot load ${this.levelName}`, err);
+                console.error(`CurrentPoint cannot load ${levelName}`, err);
                 return;
             }
             const data = asset.json as MazeLevelData;

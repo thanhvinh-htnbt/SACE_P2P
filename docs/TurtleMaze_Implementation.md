@@ -119,8 +119,12 @@ export interface MazeLevelData {
 14. Cũng trong `TurtleFrameAnimator`, trạng thái idle nội suy scale theo cosine từ `1.176471` tới `1.3` rồi quay lại. `idleHalfCycle` mặc định `0.65s`; `play()` khóa scale ở mức min và `stop()` khởi động lại nhịp idle.
 15. `PointItemAnimator` nội suy cosine scale icon từ `0.8` tới `1` rồi về `0.8` (`halfCycle=0.6s`). `GameBootstrap` truyền phase offset theo cell index để các icon không chạy đồng bộ tuyệt đối.
 
-16. `GameAudio` preload SFX từ `resources/audio` và tồn tại xuyên scene. Mapping: Start/Back → `click`, Land → `player_move`, Flow → `wave`, ăn item → `item`, thắng → `win`, thua → `lose`. Các hiệu ứng dùng `AudioSource.playOneShot()` nên có thể phát chồng tự nhiên.
+16. `GameAudio` preload audio và tồn tại xuyên scene. Ba node con giữ riêng BGM, SFX và Wave. Mapping: Start/Back → `click`, Land → `player_move`, Flow → `wave`, ăn item → `item`, thắng → `win`, thua → `lose`.
 17. Luồng UI Ingame gồm ba trạng thái: **Setup** cho phép kéo Wall và bật `START`; **Running** khóa `DraggableItem`, đổi CTA thành `RUNNING`; **Ended** giữ khóa input và đổi CTA thành `DONE`. Bố cục theo mockup: Back góc trái, HUD trên map, kho Walls bên phải và Start ngay dưới kho.
+18. Scene Ingame sau migration dùng prefab instance `StartRun` thay NumberBoard cũ. Canvas chứa sẵn ba prefab node inactive `WinDialog`, `LoseDialog`, `BackLobbyDialog`; `GameBootstrap` giữ direct node reference và bật popup tương ứng khi nhận `game-ended`, còn `BackLobby` tìm node xác nhận trước khi rời màn. Tất cả nút trong popup phát SFX `click`.
+19. Audio mix dùng BGM volume `0.16`, SFX volume `0.85`; Wave volume `0.55`, có generation token để hủy callback cũ và bị dừng/cắt clip sau `0.24s`. Play Again reload trực tiếp `ingame`; Confirm và nút Lobby gọi chuyển scene trực tiếp.
+20. `lobby.scene` chứa root node `GameAudio` load trước Canvas, wire đủ bảy AudioClip và tự đánh dấu persistent. BGM bắt đầu từ Lobby rồi giữ nguyên qua Ingame/Play Again; trên Web sẽ có tiếng từ user gesture đầu tiên do autoplay policy.
+21. Toàn bộ button Lobby, Start, Back, Confirm, Win và Lose phát SFX `click`.
 
 ---
 

@@ -103,12 +103,16 @@ export class TurtleFrameAnimator extends Component {
         this.elapsed = 0;
         this.orderCursor = 0;
         this.idleElapsed = 0;
+        if (!this.node?.isValid) return;
         this.applyIdleScale(this.idleMinScale);
         if (this.returnToIdleOnStop) this.showIdleFrame();
     }
 
     onDisable() {
-        this.stop();
+        this.isPlaying = false;
+        this.elapsed = 0;
+        this.orderCursor = 0;
+        this.idleElapsed = 0;
     }
 
     private setFrames(frames: SpriteFrame[]) {
@@ -148,6 +152,7 @@ export class TurtleFrameAnimator extends Component {
     }
 
     private applyIdleScale(scale: number) {
+        if (!this.node?.isValid) return;
         this.node.setScale(scale, scale, this.node.scale.z);
     }
 
