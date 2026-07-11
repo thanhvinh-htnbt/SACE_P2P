@@ -18,7 +18,7 @@ export interface CellData {
     /** Tường 4 cạnh theo thứ tự [Up, Right, Down, Left] — khớp enum Dir. */
     walls: [WallState, WallState, WallState, WallState];
     item?: ItemType;      // item hiện có trên ô (nếu có)
-    itemValue?: number;   // giá trị điểm nếu là Food
+    itemValue?: number;   // số hiện trên ô Food, đồng thời là điểm nhận được khi rùa ăn
     /** 🌊 Ô dòng chảy + hướng cuốn. undefined = ô cạn (đi bộ bình thường). */
     flow?: Dir;
 }

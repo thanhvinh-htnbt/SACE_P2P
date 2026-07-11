@@ -37,7 +37,7 @@ export class TurnManager extends Component {
             isGameOver: false,
             isWin: false,
         };
-        this.turtle = new TurtleAgent(this.state, this.pathfinder, data);
+        this.turtle = new TurtleAgent(this.state, data);
         this.phase = TurnPhase.PlacingItem;
         TurnManager.eventTarget.emit('state-changed', this.state);
     }
@@ -64,6 +64,8 @@ export class TurnManager extends Component {
 
     // Người chơi xác nhận xong việc đặt item, chuyển sang chọn số bước
     confirmPlacement() {
+        if (this.phase !== TurnPhase.PlacingItem) return;
+
         this.phase = TurnPhase.ChoosingSteps;
         TurnManager.eventTarget.emit('phase-changed', this.phase);
     }
@@ -71,26 +73,51 @@ export class TurnManager extends Component {
     // Người chơi chọn số bước, bắt đầu rùa tự di chuyển
     async chooseSteps(steps: number) {
         if (this.phase !== TurnPhase.ChoosingSteps) return;
+        const requestedSteps = Math.floor(steps);
+        if (!Number.isFinite(requestedSteps) || requestedSteps <= 0) return;
+
         this.phase = TurnPhase.TurtleMoving;
         this.state.isMoving = true;
         TurnManager.eventTarget.emit('phase-changed', this.phase);
 
-        for (let i = 0; i < steps; i++) {
+        const remainingSteps = Math.max(
+            0,
+            this.data.winCondition.maxSteps - this.state.stepsUsed,
+        );
+        const stepsToRun = Math.min(requestedSteps, remainingSteps);
+        let isStuck = false;
+
+        for (let i = 0; i < stepsToRun; i++) {
             if (this.state.isGameOver) break;
 
-            const moved = this.turtle.step(); // di chuyển 1 ô, trả về false nếu kẹt hoàn toàn
-            this.state.stepsUsed++;
+            const moved = await this.turtle.step(async move => {
+                // Chỉ bước chủ động mới trừ quỹ; các hop do Flow cuốn là miễn phí.
+                if (!move.isFlowMove) this.state.stepsUsed++;
 
-            this.checkCellItem();
-            TurnManager.eventTarget.emit('turtle-moved', { ...this.state });
+                // Callback chạy cho từng ô, nên item trên đường Flow vẫn được ăn đủ.
+                this.checkCellItem();
+                TurnManager.eventTarget.emit('turtle-moved', {
+                    ...this.state,
+                    isFlowMove: move.isFlowMove,
+                });
 
-            await this.delay(300); // animation timing, tùy bạn chỉnh
+                await this.delay(move.isFlowMove ? 150 : 300);
+            });
 
-            if (!moved) break; // rùa không còn đường đi -> dừng sớm
+            if (!moved) {
+                isStuck = true;
+                break;
+            }
             if (this.isAtGoal()) break; // tới đích sớm hơn số bước đã chọn -> dừng
         }
 
         this.state.isMoving = false;
+
+        if (isStuck) {
+            this.endGame(false, 'stuck');
+            return;
+        }
+
         this.evaluateWinCondition();
 
         if (!this.state.isGameOver) {
@@ -122,24 +149,27 @@ export class TurnManager extends Component {
             const scoreOk = this.state.scoreCollected >= targetScore;
             const stepsOk = this.state.stepsUsed <= maxSteps;
 
-            this.state.isGameOver = true;
-            this.state.isWin = scoreOk && stepsOk;
-            this.phase = TurnPhase.GameEnded;
-
-            TurnManager.eventTarget.emit('game-ended', {
-                isWin: this.state.isWin,
-                reason: !scoreOk ? 'not-enough-score' : !stepsOk ? 'too-many-steps' : 'success',
-            });
+            this.endGame(
+                scoreOk && stepsOk,
+                !scoreOk ? 'not-enough-score' : !stepsOk ? 'too-many-steps' : 'success',
+            );
             return;
         }
 
         // Chưa tới đích nhưng đã hết số bước cho phép -> thua
         if (this.state.stepsUsed >= maxSteps) {
-            this.state.isGameOver = true;
-            this.state.isWin = false;
-            this.phase = TurnPhase.GameEnded;
-            TurnManager.eventTarget.emit('game-ended', { isWin: false, reason: 'out-of-steps' });
+            this.endGame(false, 'out-of-steps');
         }
+    }
+
+    private endGame(isWin: boolean, reason: string) {
+        this.state.isMoving = false;
+        this.state.isGameOver = true;
+        this.state.isWin = isWin;
+        this.phase = TurnPhase.GameEnded;
+
+        TurnManager.eventTarget.emit('phase-changed', this.phase);
+        TurnManager.eventTarget.emit('game-ended', { isWin, reason });
     }
 
     private delay(ms: number): Promise<void> {

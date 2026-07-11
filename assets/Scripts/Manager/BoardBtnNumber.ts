@@ -81,6 +81,7 @@ export class BoardBtnNumber extends Component {
         const steps = this.getValue();
         if (steps <= 0) return; // chưa nhập số hợp lệ
         BoardBtnNumber.eventTarget.emit('go', steps);
+        this.onClear();
     }
 
     /** Số bước hiện đang nhập (0 nếu chưa nhập). */
