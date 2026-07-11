@@ -1,42 +1,51 @@
 import { _decorator, Component, Node, Prefab, instantiate, Vec3 } from 'cc';
 import { MazeLevelData } from './MazeData';
-import { Dir } from './MazeConstants';
 const { ccclass, property } = _decorator;
 
 @ccclass('MazeBuilder')
 export class MazeBuilder extends Component {
-    @property(Prefab) floorTilePrefab: Prefab = null;
-    @property(Prefab) wallPrefab: Prefab = null;
-    @property(Node) mazeRoot: Node = null;
+    @property(Prefab) landPrefab: Prefab = null;    // ô sàn (Land, 128x128)
+    @property(Prefab) wallHPrefab: Prefab = null;   // tường ngang (Wall-Horizontal) — cạnh trên/dưới
+    @property(Prefab) wallVPrefab: Prefab = null;    // tường dọc  (Wall-Vertical)   — cạnh trái/phải
+    @property(Node)   mazeRoot: Node = null;         // để trống = dùng chính node này
 
-    readonly CELL_SIZE = 64;
+    readonly CELL_SIZE = 128;
 
     build(data: MazeLevelData) {
-        this.mazeRoot.removeAllChildren();
+        const root = this.mazeRoot ?? this.node;
+        root.removeAllChildren();
 
         for (const cell of data.cells) {
+            // row tăng xuống dưới => y âm dần
             const pos = new Vec3(cell.col * this.CELL_SIZE, -cell.row * this.CELL_SIZE, 0);
 
-            const floor = instantiate(this.floorTilePrefab);
-            floor.setPosition(pos);
-            this.mazeRoot.addChild(floor);
+            const land = instantiate(this.landPrefab);
+            land.setPosition(pos);
+            root.addChild(land);
 
-            // Chỉ vẽ tường Up và Left để tránh vẽ trùng giữa 2 ô kề nhau
-            if (cell.walls[0]) this.spawnWall(pos, 'up');
-            if (cell.walls[3]) this.spawnWall(pos, 'left');
+            // Cạnh chung chỉ vẽ 1 lần: vẽ tường Trên + Trái cho mọi ô
+            if (cell.walls[0]) this.spawnWall(root, pos, 'up');
+            if (cell.walls[3]) this.spawnWall(root, pos, 'left');
+            // Viền ngoài cùng: cạnh Dưới của hàng cuối, cạnh Phải của cột cuối
+            if (cell.row === data.rows - 1 && cell.walls[2]) this.spawnWall(root, pos, 'down');
+            if (cell.col === data.cols - 1 && cell.walls[1]) this.spawnWall(root, pos, 'right');
         }
     }
 
-    private spawnWall(basePos: Vec3, side: 'up' | 'left') {
-        const wall = instantiate(this.wallPrefab);
-        const offset = side === 'up'
-            ? new Vec3(0, this.CELL_SIZE / 2, 0)
-            : new Vec3(-this.CELL_SIZE / 2, 0, 0);
+    // Wall-Horizontal / Wall-Vertical đã xoay sẵn trong prefab → chỉ cần đặt vị trí
+    private spawnWall(root: Node, basePos: Vec3, side: 'up' | 'down' | 'left' | 'right') {
+        const half = this.CELL_SIZE / 2;
+        let prefab: Prefab;
+        let offset: Vec3;
+        switch (side) {
+            case 'up':    prefab = this.wallHPrefab; offset = new Vec3(0, half, 0); break;
+            case 'down':  prefab = this.wallHPrefab; offset = new Vec3(0, -half, 0); break;
+            case 'left':  prefab = this.wallVPrefab; offset = new Vec3(-half, 0, 0); break;
+            case 'right': prefab = this.wallVPrefab; offset = new Vec3(half, 0, 0); break;
+        }
 
-        const finalPos = basePos.clone().add(offset); // clone trước khi add
-        wall.setPosition(finalPos);
-
-        if (side === 'up') wall.angle = 0; else wall.angle = 90;
-        this.mazeRoot.addChild(wall);
+        const wall = instantiate(prefab);
+        wall.setPosition(basePos.clone().add(offset));
+        root.addChild(wall);
     }
 }
