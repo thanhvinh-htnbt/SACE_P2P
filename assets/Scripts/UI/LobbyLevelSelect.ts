@@ -90,15 +90,14 @@ export class LobbyLevelSelect extends Component {
             if (child !== this.levelButtonTemplate) child.destroy();
         }
 
-        const unlockedLevels = this.levels
-            .filter(level => LevelProgress.isUnlocked(level.name))
+        const selectableLevels = [...this.levels]
             .sort((a, b) => Number(b.data.levelId) - Number(a.data.levelId));
 
         const discSpacing = 76;
-        const contentHeight = Math.max(610, 80 + unlockedLevels.length * discSpacing);
+        const contentHeight = Math.max(610, 80 + selectableLevels.length * discSpacing);
         this.levelContent.getComponent(UITransform)?.setContentSize(580, contentHeight);
 
-        unlockedLevels.forEach((level, index) => {
+        selectableLevels.forEach((level, index) => {
             const disc = instantiate(this.levelButtonTemplate);
             disc.name = `LevelButton_${level.data.levelId}`;
             disc.active = true;
