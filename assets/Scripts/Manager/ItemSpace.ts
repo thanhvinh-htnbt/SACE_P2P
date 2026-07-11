@@ -1,4 +1,4 @@
-import { _decorator, Component, director, instantiate, JsonAsset, Node, Prefab, resources, Vec3 } from 'cc';
+import { _decorator, Component, director, instantiate, JsonAsset, Node, Prefab, resources, UITransform, Vec3 } from 'cc';
 import { Inventory, ItemType, MazeLevelData } from '../Maze/MazeData';
 import { Dir } from '../Maze/MazeConstants';
 import { DraggableItem, InventoryItemKind, ItemDropRequest } from './DraggableItem';
@@ -122,11 +122,29 @@ export class ItemSpace extends Component {
             if (!turnManager.placeItem(row, col, null, ItemType.Food)) return;
         }
 
+        if (wallCell) this.applySystemWallSize(request.item, request.kind);
         request.item.setParent(target);
         request.item.setPosition(x, y, 0);
         const draggable = request.item.getComponent(DraggableItem);
         if (draggable) draggable.enabled = false;
         request.accept();
+    }
+
+    /**
+     * Wall trong ItemSpace giữ kích thước preview 128x32 để dễ kéo.
+     * Khi đặt xuống, chuyển về đúng format wall tĩnh trong Level prefab:
+     * UITransform 8x128; wall ngang xoay 90°, wall dọc giữ 0°.
+     */
+    private applySystemWallSize(item: Node, kind: InventoryItemKind) {
+        item.setScale(1, 1, 1);
+        item.setRotationFromEuler(0, 0, kind === 'wallH' ? 90 : 0);
+        this.setWallTransformSize(item);
+    }
+
+    private setWallTransformSize(node: Node) {
+        const transform = node.getComponent(UITransform);
+        if (transform) transform.setContentSize(8, 128);
+        for (const child of node.children) this.setWallTransformSize(child);
     }
 
     private findMapRoot(node: Node): Node | null {

@@ -97,6 +97,9 @@ export interface MazeLevelData {
 5. `ingame.scene` đã wire map tĩnh, rùa, `GameBootstrap`, `TurnManager`, ItemSpace, bộ chọn bước và HUD realtime.
 6. `GameBootstrap.tweenTurtle()` tween cả vị trí và hướng nhìn bằng `sineInOut`; sprite gốc nhìn xuống và góc quay được chuẩn hóa theo cung ngắn nhất. Tween thường `0.45s`, Flow `0.28s`; `TurnManager` chờ tương ứng `500ms`/`320ms` để tween không bị bước kế tiếp ngắt giữa chừng.
 7. `TurnManager.chooseSteps()` chạy cho tới khi đủ số lần `consumesStep`, không đếm lượt miễn phí Land → Flow / Flow → Flow. `BoardBtnNumber` nghe `turtle-moved` và chỉ giảm countdown khi `consumesStep = true`.
+8. Khi `TurnManager.init()`, `TurtleAgent.getNextDirection()` chọn hướng mở hợp lệ đầu tiên tại ô start. `GameBootstrap.tweenInitialFacing()` tween sprite sang hướng đó trước lượt chạy đầu tiên.
+9. `ItemSpace.applySystemWallSize()` chỉ resize wall sau khi drop hợp lệ: từ preview `128×32` về cùng format wall tĩnh `8×128`; horizontal xoay `90°`, vertical `0°`.
+10. `GameBootstrap.spawnCellItems()` tắt các `Sprite` nền của Item đặt sẵn trên cell và chỉ tạo `ValueLabel`, tránh che sprite Land/Flow.
 
 ---
 

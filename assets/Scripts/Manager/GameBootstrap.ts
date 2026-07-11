@@ -7,6 +7,7 @@ import {
     Label,
     Node,
     Prefab,
+    Sprite,
     UITransform,
     Tween,
     Vec3,
@@ -88,9 +89,11 @@ export class GameBootstrap extends Component {
 
             this.levelData = data;
             this.setTurtlePosition(data.start.row, data.start.col);
+            // Hướng mặc định của gameplay là Right; sau init sẽ tween sang hướng mở hợp lệ.
             this.turtleNode.setRotationFromEuler(0, 0, this.facingToAngle(1));
             this.spawnCellItems(levelNode, data);
-            this.turnManager.init(data);
+            const initialState = this.turnManager.init(data);
+            this.tweenInitialFacing(initialState.facing);
             this.isReady = true;
         });
     }
@@ -144,6 +147,19 @@ export class GameBootstrap extends Component {
             .start();
     }
 
+    private tweenInitialFacing(facing: number) {
+        const node = this.turtleNode;
+        const targetAngle = this.facingToAngle(facing);
+        const currentAngle = node.angle;
+        const shortestDelta = ((targetAngle - currentAngle + 540) % 360) - 180;
+
+        Tween.stopAllByTarget(node);
+        tween(node)
+            .to(0.4, { angle: currentAngle + shortestDelta }, { easing: 'sineInOut' })
+            .call(() => node.setRotationFromEuler(0, 0, targetAngle))
+            .start();
+    }
+
     /** Sprite gốc nhìn xuống: Up=180, Right=90, Down=0, Left=-90. */
     private facingToAngle(facing: number): number {
         return (2 - facing) * 90;
@@ -173,6 +189,12 @@ export class GameBootstrap extends Component {
             itemNode.name = `Item_${cell.row}_${cell.col}`;
             itemNode.setPosition(cell.col * CELL_SIZE, -cell.row * CELL_SIZE, 0);
             itemLayer.addChild(itemNode);
+
+            // Item có sẵn trên map chỉ hiển thị số điểm; không dùng background
+            // của prefab vì background sẽ che texture Land/Flow bên dưới.
+            for (const sprite of itemNode.getComponentsInChildren(Sprite)) {
+                sprite.enabled = false;
+            }
 
             const labelNode = new Node('ValueLabel');
             labelNode.layer = itemNode.layer;

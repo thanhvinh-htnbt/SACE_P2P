@@ -25,7 +25,7 @@ export class TurnManager extends Component {
     private turtle: TurtleAgent;
     private phase: TurnPhase = TurnPhase.PlacingItem;
 
-    init(data: MazeLevelData) {
+    init(data: MazeLevelData): GameState {
         this.data = data;
         this.pathfinder = new MazePathfinder(data);
         this.state = {
@@ -39,8 +39,11 @@ export class TurnManager extends Component {
             isWin: false,
         };
         this.turtle = new TurtleAgent(this.state, data);
+        // Hướng ban đầu phải là một cạnh có thể đi, dùng đúng luật ưu tiên của rùa.
+        this.state.facing = this.turtle.getNextDirection() ?? this.state.facing;
         this.phase = TurnPhase.PlacingItem;
         TurnManager.eventTarget.emit('state-changed', this.state);
+        return this.state;
     }
 
     // Người chơi đặt item lên 1 ô (tường hoặc food)
