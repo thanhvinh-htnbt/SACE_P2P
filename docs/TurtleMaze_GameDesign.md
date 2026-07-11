@@ -122,6 +122,8 @@ Rùa đi xong pha đã chọn (chưa về đích) → map **tự biến đổi t
 
 Rùa **không đi ngẫu nhiên**. Luật công khai, không đổi giữa các pha — thứ thay đổi là map.
 
+Tại thời điểm bắt đầu level, hướng nhìn của rùa được chọn từ một cạnh đang mở tại ô start theo cùng thứ tự ưu tiên; sprite tween sang hướng hợp lệ trước khi chạy, không chĩa đầu vào tường.
+
 ### Trên cạn
 
 - **Hành lang một chiều** (chỉ 1 lối ra ngoài lối vừa vào): tiếp tục đi tới.

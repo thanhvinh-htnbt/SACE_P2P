@@ -25,7 +25,7 @@ export class TurtleAgent {
      * Trả về false khi cả 4 hướng đều bị chặn.
      */
     async step(onMoved: MoveHandler = () => {}): Promise<boolean> {
-        const dir = this.chooseNextMove();
+        const dir = this.getNextDirection();
         if (dir === null) return false;
 
         const consumesStep = this.destinationIsLand(
@@ -43,7 +43,7 @@ export class TurtleAgent {
     }
 
     /** Luật cố định trên cạn: Thẳng -> Phải -> Trái -> Quay lại. */
-    private chooseNextMove(): Dir | null {
+    getNextDirection(): Dir | null {
         const facing = this.state.facing as Dir;
         const priority: Dir[] = [
             facing,
