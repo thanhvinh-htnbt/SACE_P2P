@@ -50,7 +50,7 @@ export class ItemSpace extends Component {
             for (let i = 0; i < count; i++) {
                 const item = instantiate(prefab);
                 item.name = `${kind}_${i + 1}`;
-                item.layer = this.node.layer;
+                this.setLayerRecursively(item, this.node.layer);
                 content.addChild(item);
 
                 const row = Math.floor(index / Math.max(1, this.columns));
@@ -61,6 +61,11 @@ export class ItemSpace extends Component {
                 index++;
             }
         }
+    }
+
+    private setLayerRecursively(node: Node, layer: number) {
+        node.layer = layer;
+        for (const child of node.children) this.setLayerRecursively(child, layer);
     }
 
     private onItemDrop(request: ItemDropRequest) {
