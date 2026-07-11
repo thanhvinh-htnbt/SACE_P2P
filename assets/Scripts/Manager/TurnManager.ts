@@ -5,6 +5,7 @@ import { MazePathfinder } from '../Maze/MazePathfinder';
 import { Dir } from '../Maze/MazeConstants';
 import { GameState } from './GameState';
 import { TurtleAgent } from '../Player/TurtleAgent';
+import { LogicPutWall } from '../Logic/LogicPutWall';
 const { ccclass } = _decorator;
 
 export enum TurnPhase {
@@ -43,23 +44,31 @@ export class TurnManager extends Component {
     }
 
     // Người chơi đặt item lên 1 ô (tường hoặc food)
-    placeItem(row: number, col: number, dir: Dir | null, itemType: ItemType, value?: number) {
-        if (this.phase !== TurnPhase.PlacingItem) return;
+    placeItem(row: number, col: number, dir: Dir | null, itemType: ItemType, value?: number): boolean {
+        if (this.phase !== TurnPhase.PlacingItem || !this.data || !this.state) return false;
 
         if (itemType === ItemType.Wall && dir !== null) {
+            // Chặn cạnh ngoài biên, cạnh đã có wall và cạnh Flow-Flow trước khi thử pathfinding.
+            if (!new LogicPutWall(this.data).canPlaceWall(row, col, dir)) {
+                TurnManager.eventTarget.emit('wall-blocked-invalid');
+                return false;
+            }
             const turtlePos = { row: this.state.turtleRow, col: this.state.turtleCol };
             if (!this.pathfinder.canPlaceWallSafely(row, col, dir, turtlePos)) {
                 TurnManager.eventTarget.emit('wall-blocked-invalid');
-                return;
+                return false;
             }
             this.pathfinder.placeWall(row, col, dir);
         } else if (itemType === ItemType.Food) {
             const idx = row * this.data.cols + col;
             this.data.cells[idx].item = ItemType.Food;
             this.data.cells[idx].itemValue = value ?? 1;
+        } else {
+            return false;
         }
 
         TurnManager.eventTarget.emit('maze-changed', this.data);
+        return true;
     }
 
     // Người chơi xác nhận xong việc đặt item, chuyển sang chọn số bước
@@ -86,22 +95,31 @@ export class TurnManager extends Component {
         );
         const stepsToRun = Math.min(requestedSteps, remainingSteps);
         let isStuck = false;
+        let consumedSteps = 0;
+        let consecutiveFreeActions = 0;
+        const maxFreeActions = this.data.cells.length * 4;
 
-        for (let i = 0; i < stepsToRun; i++) {
+        while (consumedSteps < stepsToRun) {
             if (this.state.isGameOver) break;
 
+            const consumedBeforeMove = consumedSteps;
             const moved = await this.turtle.step(async move => {
-                // Chỉ bước chủ động mới trừ quỹ; các hop do Flow cuốn là miễn phí.
-                if (!move.isFlowMove) this.state.stepsUsed++;
+                // Tính theo ô đích: vào/đi giữa Flow miễn phí, đáp xuống Land mới trừ 1.
+                if (move.consumesStep) {
+                    this.state.stepsUsed++;
+                    consumedSteps++;
+                }
 
                 // Callback chạy cho từng ô, nên item trên đường Flow vẫn được ăn đủ.
                 this.checkCellItem();
                 TurnManager.eventTarget.emit('turtle-moved', {
                     ...this.state,
                     isFlowMove: move.isFlowMove,
+                    consumesStep: move.consumesStep,
                 });
 
-                await this.delay(move.isFlowMove ? 150 : 300);
+                // Chờ tween view hoàn tất trước khi phát chuyển động kế tiếp.
+                await this.delay(move.isFlowMove ? 320 : 500);
             });
 
             if (!moved) {
@@ -109,6 +127,17 @@ export class TurnManager extends Component {
                 break;
             }
             if (this.isAtGoal()) break; // tới đích sớm hơn số bước đã chọn -> dừng
+
+            if (consumedSteps === consumedBeforeMove) {
+                consecutiveFreeActions++;
+                if (consecutiveFreeActions >= maxFreeActions) {
+                    console.warn('Free-move loop detected; turtle stopped');
+                    isStuck = true;
+                    break;
+                }
+            } else {
+                consecutiveFreeActions = 0;
+            }
         }
 
         this.state.isMoving = false;

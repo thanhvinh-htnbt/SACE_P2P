@@ -8,6 +8,8 @@ export interface TurtleMove {
     facing: Dir;
     /** true = bị Flow cuốn, không tính vào số bước người chơi đã chọn. */
     isFlowMove: boolean;
+    /** Chỉ trừ quỹ bước khi ô đích là Land. Đi vào/giữa các ô Flow là miễn phí. */
+    consumesStep: boolean;
 }
 
 type MoveHandler = (move: TurtleMove) => void | Promise<void>;
@@ -26,8 +28,13 @@ export class TurtleAgent {
         const dir = this.chooseNextMove();
         if (dir === null) return false;
 
+        const consumesStep = this.destinationIsLand(
+            this.state.turtleRow,
+            this.state.turtleCol,
+            dir,
+        );
         this.move(dir);
-        await onMoved(this.createMove(false));
+        await onMoved(this.createMove(false, consumesStep));
 
         if (!this.isAtGoal()) {
             await this.slideThroughFlow(onMoved);
@@ -35,13 +42,13 @@ export class TurtleAgent {
         return true;
     }
 
-    /** Luật cố định trên cạn: Thẳng -> Trái -> Phải -> Quay lại. */
+    /** Luật cố định trên cạn: Thẳng -> Phải -> Trái -> Quay lại. */
     private chooseNextMove(): Dir | null {
         const facing = this.state.facing as Dir;
         const priority: Dir[] = [
             facing,
-            ((facing + 3) % 4) as Dir, // trái
             ((facing + 1) % 4) as Dir, // phải
+            ((facing + 3) % 4) as Dir, // trái
             ((facing + 2) % 4) as Dir, // quay lại
         ];
 
@@ -78,8 +85,9 @@ export class TurtleAgent {
             this.state.facing = flowDir;
             if (!this.canMove(row, col, flowDir)) return;
 
+            const consumesStep = this.destinationIsLand(row, col, flowDir);
             this.move(flowDir);
-            await onMoved(this.createMove(true));
+            await onMoved(this.createMove(true, consumesStep));
         }
     }
 
@@ -104,12 +112,18 @@ export class TurtleAgent {
         this.state.facing = dir;
     }
 
-    private createMove(isFlowMove: boolean): TurtleMove {
+    private destinationIsLand(row: number, col: number, dir: Dir): boolean {
+        const [dr, dc] = DIR_OFFSETS[dir];
+        return this.getCell(row + dr, col + dc)?.flow === undefined;
+    }
+
+    private createMove(isFlowMove: boolean, consumesStep: boolean): TurtleMove {
         return {
             row: this.state.turtleRow,
             col: this.state.turtleCol,
             facing: this.state.facing,
             isFlowMove,
+            consumesStep,
         };
     }
 

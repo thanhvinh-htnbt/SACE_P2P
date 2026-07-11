@@ -1,6 +1,8 @@
 import { _decorator, Component, director, instantiate, JsonAsset, Node, Prefab, resources, Vec3 } from 'cc';
-import { Inventory, MazeLevelData } from '../Maze/MazeData';
+import { Inventory, ItemType, MazeLevelData } from '../Maze/MazeData';
+import { Dir } from '../Maze/MazeConstants';
 import { DraggableItem, InventoryItemKind, ItemDropRequest } from './DraggableItem';
+import { TurnManager } from './TurnManager';
 const { ccclass, property } = _decorator;
 
 @ccclass('ItemSpace')
@@ -78,27 +80,46 @@ export class ItemSpace extends Component {
         let x: number;
         let y: number;
         let target = map;
+        let wallCell: { row: number; col: number; dir: Dir } | null = null;
 
         if (request.kind === 'wallH') {
             const col = Math.round(local.x / cellSize);
             const boundary = Math.round((cellSize / 2 - local.y) / cellSize);
-            if (col < 0 || col >= 8 || boundary < 0 || boundary > 6) return;
+            // Chỉ đặt ở cạnh giữa hai ô; viền ngoài đã là wall cố định.
+            if (col < 0 || col >= 8 || boundary <= 0 || boundary >= 6) return;
             x = col * cellSize;
             y = cellSize / 2 - boundary * cellSize;
             target = map.getChildByName('Walls') ?? map;
+            wallCell = { row: boundary - 1, col, dir: 2 };
         } else if (request.kind === 'wallV') {
             const boundary = Math.round((local.x + cellSize / 2) / cellSize);
             const row = Math.round(-local.y / cellSize);
-            if (boundary < 0 || boundary > 8 || row < 0 || row >= 6) return;
+            if (boundary <= 0 || boundary >= 8 || row < 0 || row >= 6) return;
             x = -cellSize / 2 + boundary * cellSize;
             y = -row * cellSize;
             target = map.getChildByName('Walls') ?? map;
+            wallCell = { row, col: boundary - 1, dir: 1 };
         } else {
             const col = Math.round(local.x / cellSize);
             const row = Math.round(-local.y / cellSize);
             if (col < 0 || col >= 8 || row < 0 || row >= 6) return;
             x = col * cellSize;
             y = -row * cellSize;
+        }
+
+        const turnManager = this.findTurnManager(director.getScene());
+        if (!turnManager) return;
+        if (wallCell) {
+            if (!turnManager.placeItem(
+                wallCell.row,
+                wallCell.col,
+                wallCell.dir,
+                ItemType.Wall,
+            )) return;
+        } else if (request.kind === 'food') {
+            const col = Math.round(local.x / cellSize);
+            const row = Math.round(-local.y / cellSize);
+            if (!turnManager.placeItem(row, col, null, ItemType.Food)) return;
         }
 
         request.item.setParent(target);
@@ -115,6 +136,16 @@ export class ItemSpace extends Component {
 
         for (const child of node.children) {
             const result = this.findMapRoot(child);
+            if (result) return result;
+        }
+        return null;
+    }
+
+    private findTurnManager(node: Node): TurnManager | null {
+        const manager = node.getComponent(TurnManager);
+        if (manager) return manager;
+        for (const child of node.children) {
+            const result = this.findTurnManager(child);
             if (result) return result;
         }
         return null;

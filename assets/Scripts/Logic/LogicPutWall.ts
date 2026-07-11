@@ -12,7 +12,8 @@ export class LogicPutWall {
         const neighbor = this.getNeighbor(row, col, dir);
         if (!neighbor) return false; // cạnh ngoài biên map, không có ô kề
 
-        if (cell.walls[dir] !== WallState.NONE) return false; // đã có tường ở cạnh này
+        if (cell.walls[dir] !== WallState.NONE
+            || neighbor.walls[OPPOSITE_DIR[dir]] !== WallState.NONE) return false;
 
         return cell.flow === undefined || neighbor.flow === undefined;
     }

@@ -8,9 +8,12 @@ import {
     Node,
     Prefab,
     UITransform,
+    Tween,
+    Vec3,
     VerticalTextAlignment,
     instantiate,
     resources,
+    tween,
 } from 'cc';
 import { TurnManager } from '../Manager/TurnManager';
 import { GameState } from '../Manager/GameState';
@@ -19,6 +22,12 @@ import { BoardBtnNumber } from './BoardBtnNumber';
 const { ccclass, property } = _decorator;
 
 const CELL_SIZE = 128;
+const MOVE_TWEEN_DURATION = 0.45;
+const FLOW_TWEEN_DURATION = 0.28;
+
+interface TurtleViewState extends GameState {
+    isFlowMove?: boolean;
+}
 
 @ccclass('GameBootstrap')
 export class GameBootstrap extends Component {
@@ -57,8 +66,11 @@ export class GameBootstrap extends Component {
             return;
         }
 
-        const levelNode = instantiate(this.levelPrefab);
-        (this.levelHost ?? this.node).addChild(levelNode);
+        const host = this.levelHost ?? this.node;
+        // Tái sử dụng prefab map đã đặt sẵn trong scene để không tạo hai map chồng nhau.
+        const levelNode = host.children.find(child => /^Level_\d+$/.test(child.name))
+            ?? instantiate(this.levelPrefab);
+        if (!levelNode.parent) host.addChild(levelNode);
 
         // Prefab tĩnh đã chứa sẵn Terrain/Walls.
         if (!this.turtleNode) {
@@ -76,6 +88,7 @@ export class GameBootstrap extends Component {
 
             this.levelData = data;
             this.setTurtlePosition(data.start.row, data.start.col);
+            this.turtleNode.setRotationFromEuler(0, 0, this.facingToAngle(1));
             this.spawnCellItems(levelNode, data);
             this.turnManager.init(data);
             this.isReady = true;
@@ -91,10 +104,10 @@ export class GameBootstrap extends Component {
     }
 
     // State chỉ giữ row/col; view đổi row/col thành tọa độ thật của prefab map.
-    private onTurtleMoved(state: GameState) {
+    private onTurtleMoved(state: TurtleViewState) {
         if (!this.levelData || !this.turtleNode) return;
 
-        this.setTurtlePosition(state.turtleRow, state.turtleCol);
+        this.tweenTurtle(state);
 
         const index = state.turtleRow * this.levelData.cols + state.turtleCol;
         if (this.levelData.cells[index].item !== ItemType.Food) {
@@ -105,6 +118,35 @@ export class GameBootstrap extends Component {
 
     private setTurtlePosition(row: number, col: number) {
         this.turtleNode.setPosition(col * CELL_SIZE, -row * CELL_SIZE, 0);
+    }
+
+    private tweenTurtle(state: TurtleViewState) {
+        const node = this.turtleNode;
+        const targetPosition = new Vec3(
+            state.turtleCol * CELL_SIZE,
+            -state.turtleRow * CELL_SIZE,
+            0,
+        );
+        const targetAngle = this.facingToAngle(state.facing);
+        const currentAngle = node.angle;
+        // Chuẩn hóa về [-180, 180] để luôn quay theo cung ngắn nhất.
+        const shortestDelta = ((targetAngle - currentAngle + 540) % 360) - 180;
+        const tweenAngle = currentAngle + shortestDelta;
+        const duration = state.isFlowMove ? FLOW_TWEEN_DURATION : MOVE_TWEEN_DURATION;
+
+        Tween.stopAllByTarget(node);
+        tween(node)
+            .to(duration, {
+                position: targetPosition,
+                angle: tweenAngle,
+            }, { easing: 'sineInOut' })
+            .call(() => node.setRotationFromEuler(0, 0, targetAngle))
+            .start();
+    }
+
+    /** Sprite gốc nhìn xuống: Up=180, Right=90, Down=0, Left=-90. */
+    private facingToAngle(facing: number): number {
+        return (2 - facing) * 90;
     }
 
     // Terrain/Walls vẫn nằm sẵn trong Level prefab; chỉ item gameplay được đọc từ JSON.

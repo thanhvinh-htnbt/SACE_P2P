@@ -75,8 +75,8 @@ export interface MazeLevelData {
 
 | Khái niệm | Code |
 |---|---|
-| Dữ liệu màn chơi | `MazeLevelData` — [MazeData.ts](../assets/Scripts/Maze/MazeData.ts) — *cần thêm `startFacing`, `inventory`, `mutations`* |
-| Ô mê cung | `CellData` — [MazeData.ts](../assets/Scripts/Maze/MazeData.ts) — *cần thêm `flow?: Dir`* |
+| Dữ liệu màn chơi | `MazeLevelData` — [MazeData.ts](../assets/Scripts/Maze/MazeData.ts) |
+| Ô mê cung | `CellData` — [MazeData.ts](../assets/Scripts/Maze/MazeData.ts), gồm `walls` và `flow?: Dir` |
 | Điều kiện thắng | `WinCondition` — [MazeData.ts](../assets/Scripts/Maze/MazeData.ts) |
 | Loại item | `ItemType` — [MazeData.ts](../assets/Scripts/Maze/MazeData.ts) — *cần thêm `StepBonus`* |
 | Hướng | `Dir`, `DIR_OFFSETS`, `OPPOSITE_DIR` — [MazeConstants.ts](../assets/Scripts/Maze/MazeConstants.ts) |
@@ -85,20 +85,18 @@ export interface MazeLevelData {
 | Luật đi của rùa | `TurtleAgent.chooseNextMove()` — [TurtleAgent.ts](../assets/Scripts/Player/TurtleAgent.ts) |
 | Nhặt item | `TurnManager.checkCellItem()` — [TurnManager.ts](../assets/Scripts/Manager/TurnManager.ts) |
 | Xét thắng/thua | `TurnManager.evaluateWinCondition()` — [TurnManager.ts](../assets/Scripts/Manager/TurnManager.ts) |
-| Luật đặt Wall theo địa hình (Flow–Flow ❌, còn lại ✅) | `LogicPutWall.canPlaceWall()` / `.placeWall()` — [LogicPutWall.ts](../assets/Scripts/Logic/LogicPutWall.ts) |
+| Luật đặt Wall | `ItemSpace.onItemDrop()` → `TurnManager.placeItem()` → `LogicPutWall` + `MazePathfinder` |
+| Tính bước Flow/Land | `TurtleAgent.destinationIsLand()` tạo `TurtleMove.consumesStep`; `TurnManager` chỉ tăng `stepsUsed` khi cờ này là `true` |
 
-### ⚠️ Code đang lệch design đã chốt — SỬA SAU (đã thống nhất)
+### Trạng thái implementation hiện tại
 
-1. **`TurtleAgent.chooseNextMove()`**: đang dùng BFS distance + tie-break *phải→trái→quay lại* → sửa thành luật cố định **thẳng→trái→phải→quay lại**, bỏ BFS.
-2. **`TurnManager.placeItem()`**: đang gọi `canPlaceWallSafely()` → gỡ, đặt Wall tự do (bỏ luôn event `wall-blocked-invalid`).
-3. **[MazePathfinder.ts](../assets/Scripts/Maze/MazePathfinder.ts)**: hết người dùng sau 2 sửa trên → gỡ khỏi base; tách logic set tường 2 phía (`setWallState`) thành util cho đặt Wall / mutation.
-
-### Blocker để game chạy lên được (chưa làm)
-
-1. **Chưa có level JSON** — `GameBootstrap` load `resources/levels/level_01` nhưng thư mục `resources` chưa tồn tại → cần tạo `assets/resources/levels/level_01.json` theo format mục 1.
-2. **Scene chưa wire** — [scene.scene](../assets/scene.scene) mới có Canvas + Camera + node Player; chưa gắn `GameBootstrap` / `MazeBuilder` / `TurnManager`, chưa có `mazeRoot`.
-3. **Chưa render + di chuyển rùa** — `GameState` có `turtleRow/Col` nhưng chưa có gì nối vào node hiển thị rùa.
-4. **Chưa có UI** đặt item / chọn N bước → vòng lặp pha chưa chạy được bằng tay.
+1. `TurtleAgent.chooseNextMove()` dùng luật cố định **thẳng → phải → trái → quay đầu**.
+2. `TurtleMove.consumesStep` được quyết định theo ô đích: vào Flow miễn phí, đáp xuống Land tốn 1 bước.
+3. Wall kéo-thả được snap vào cạnh lưới và ghi vào `walls[dir]` của cả hai ô kề nhau, nên `TurtleAgent.canMove()` chặn chuyển động ngay lập tức.
+4. `LogicPutWall` từ chối cạnh ngoài biên, cạnh đã có Wall và Flow–Flow. `MazePathfinder.canPlaceWallSafely()` từ chối Wall làm mất đường tới đích.
+5. `ingame.scene` đã wire map tĩnh, rùa, `GameBootstrap`, `TurnManager`, ItemSpace, bộ chọn bước và HUD realtime.
+6. `GameBootstrap.tweenTurtle()` tween cả vị trí và hướng nhìn bằng `sineInOut`; sprite gốc nhìn xuống và góc quay được chuẩn hóa theo cung ngắn nhất. Tween thường `0.45s`, Flow `0.28s`; `TurnManager` chờ tương ứng `500ms`/`320ms` để tween không bị bước kế tiếp ngắt giữa chừng.
+7. `TurnManager.chooseSteps()` chạy cho tới khi đủ số lần `consumesStep`, không đếm lượt miễn phí Land → Flow / Flow → Flow. `BoardBtnNumber` nghe `turtle-moved` và chỉ giảm countdown khi `consumesStep = true`.
 
 ---
 
