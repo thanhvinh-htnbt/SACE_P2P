@@ -28,6 +28,14 @@ export interface WinCondition {
     maxSteps: number;      // số bước tối đa được phép đi hết
 }
 
+/** Số item người chơi được cấp đầu màn để tự đặt trong lúc chơi. */
+export interface Inventory {
+    wallH: number;      // số tường ngang (Wall-Horizontal) được cấp
+    wallV: number;      // số tường dọc (Wall-Vertical) được cấp
+    food: number;       // số Food được cấp
+    stepBonus: number;  // số +Step được cấp
+}
+
 export interface MazeLevelData {
     levelId: string;
     rows: number;
@@ -36,4 +44,5 @@ export interface MazeLevelData {
     goal: { row: number; col: number };
     cells: CellData[];
     winCondition: WinCondition;
+    inventory: Inventory;
 }
