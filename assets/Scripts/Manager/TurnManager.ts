@@ -13,6 +13,12 @@ export enum TurnPhase {
     GameEnded,
 }
 
+/**
+ * Số lần rùa được phép quay đầu đi ngược chiều Flow (do bị chặn hết lối ra).
+ * Vượt quá = người chơi đã tự nhốt rùa trong dòng chảy -> xử thua.
+ */
+const MAX_AGAINST_FLOW_MOVES = 5;
+
 @ccclass('TurnManager')
 export class TurnManager extends Component {
     static eventTarget = new EventTarget(); // Manager -> UI
@@ -76,6 +82,8 @@ export class TurnManager extends Component {
         TurnManager.eventTarget.emit('phase-changed', this.phase);
 
         let isStuck = false;
+        let isFlowTrapped = false;
+        let againstFlowMoves = 0;
         let consecutiveFreeActions = 0;
         const maxFreeActions = this.data.cells.length * 4;
 
@@ -91,6 +99,14 @@ export class TurnManager extends Component {
                 }
                 if (move.brokenWalls.length > 0) {
                     TurnManager.eventTarget.emit('walls-broken', move.brokenWalls);
+                }
+
+                // Quay đầu ngược dòng = bị nhốt trong Flow; bước chủ động thoát
+                // được (không phải bị dòng cuốn) thì reset bộ đếm.
+                if (move.isAgainstFlow) {
+                    againstFlowMoves++;
+                } else if (!move.isFlowMove) {
+                    againstFlowMoves = 0;
                 }
 
                 // Callback chạy cho từng ô, nên item trên đường Flow vẫn được ăn đủ.
@@ -111,6 +127,10 @@ export class TurnManager extends Component {
                 isStuck = true;
                 break;
             }
+            if (againstFlowMoves >= MAX_AGAINST_FLOW_MOVES) {
+                isFlowTrapped = true;
+                break;
+            }
             if (this.isAtGoal()) break; // tới đích sớm hơn số bước đã chọn -> dừng
 
             if (this.state.stepsUsed === stepsBeforeMove) {
@@ -127,6 +147,10 @@ export class TurnManager extends Component {
 
         this.state.isMoving = false;
 
+        if (isFlowTrapped) {
+            this.endGame(false, 'flow-trapped');
+            return;
+        }
         if (isStuck) {
             this.endGame(false, 'stuck');
             return;

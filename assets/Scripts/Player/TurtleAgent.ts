@@ -10,6 +10,11 @@ export interface TurtleMove {
     isFlowMove: boolean;
     /** Chỉ trừ quỹ bước khi ô đích là Land. Đi vào/giữa các ô Flow là miễn phí. */
     consumesStep: boolean;
+    /**
+     * true = rùa đứng trên ô Flow bị chặn hết lối, rơi vào case 4 (quay đầu)
+     * và bước ngược chiều dòng chảy — sẽ bị dòng cuốn về chỗ cũ.
+     */
+    isAgainstFlow: boolean;
     brokenWalls: BrokenWall[];
 }
 
@@ -35,6 +40,11 @@ export class TurtleAgent {
         const dir = this.getNextDirection();
         if (dir === null) return false;
 
+        // Đứng trên Flow mà phải quay đầu = đi ngược chiều dòng chảy.
+        const currentCell = this.getCell(this.state.turtleRow, this.state.turtleCol);
+        const isAgainstFlow = currentCell?.flow !== undefined
+            && dir === OPPOSITE_DIR[currentCell.flow];
+
         const consumesStep = this.destinationIsLand(
             this.state.turtleRow,
             this.state.turtleCol,
@@ -42,7 +52,7 @@ export class TurtleAgent {
         );
         this.move(dir);
         const brokenWalls = this.breakAdjacentWalls();
-        await onMoved(this.createMove(false, consumesStep, brokenWalls));
+        await onMoved(this.createMove(false, consumesStep, brokenWalls, isAgainstFlow));
 
         if (!this.isAtGoal()) {
             await this.slideThroughFlow(onMoved);
@@ -96,7 +106,7 @@ export class TurtleAgent {
             const consumesStep = this.destinationIsLand(row, col, flowDir);
             this.move(flowDir);
             const brokenWalls = this.breakAdjacentWalls();
-            await onMoved(this.createMove(true, consumesStep, brokenWalls));
+            await onMoved(this.createMove(true, consumesStep, brokenWalls, false));
         }
     }
 
@@ -151,6 +161,7 @@ export class TurtleAgent {
         isFlowMove: boolean,
         consumesStep: boolean,
         brokenWalls: BrokenWall[],
+        isAgainstFlow: boolean,
     ): TurtleMove {
         return {
             row: this.state.turtleRow,
@@ -158,6 +169,7 @@ export class TurtleAgent {
             facing: this.state.facing,
             isFlowMove,
             consumesStep,
+            isAgainstFlow,
             brokenWalls,
         };
     }
