@@ -63,7 +63,12 @@ export class LevelProgress {
     /** Chọn màn kế tiếp đã mở khóa. Trả về null nếu đây là màn cuối. */
     static selectNextLevel(): string | null {
         const nextLevel = this.getNextLevel(this.getSelectedLevel());
-        if (!nextLevel || !this.selectLevel(nextLevel)) return null;
+        if (!nextLevel) return null;
+
+        // Next Level chá»‰ Ä‘Æ°á»£c gá»i sau khi tháº¯ng: unlock + select pháº£i lÃ  má»™t thao tÃ¡c
+        // liá»n máº¡ch, tráº¡nh bá»‹ selectLevel cháº·n do localStorage chÆ°a Ä‘á»“ng bá»™.
+        this.unlockLevel(nextLevel);
+        if (!this.selectLevel(nextLevel)) return null;
         return nextLevel;
     }
 
