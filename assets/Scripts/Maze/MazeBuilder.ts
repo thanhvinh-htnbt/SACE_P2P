@@ -3,8 +3,11 @@ import {
     Component,
     Node,
     Prefab,
+    Sprite,
+    SpriteFrame,
     UITransform,
     instantiate,
+    resources,
     Vec3,
 } from 'cc';
 import { MazeLevelData, WallState } from './MazeData';
@@ -43,10 +46,13 @@ export class MazeBuilder extends Component {
         root.addChild(mazeBackground);
 
         const terrainRoot = new Node('Terrain');
+        const flowArrowsRoot = new Node('FlowArrows');
         const wallsRoot = new Node('Walls');
         terrainRoot.layer = root.layer;
+        flowArrowsRoot.layer = root.layer;
         wallsRoot.layer = root.layer;
         root.addChild(terrainRoot);
+        root.addChild(flowArrowsRoot);
         root.addChild(wallsRoot);
 
         // PASS 1 — TERRAIN (đáy): vẽ hết nền Flow / Land trước
@@ -67,6 +73,8 @@ export class MazeBuilder extends Component {
             tile.setPosition(pos);
             terrainRoot.addChild(tile);
         }
+
+        this.spawnFlowArrows(flowArrowsRoot, data);
 
         // PASS 2 — WALL (trên cùng): vẽ hết tường sau, để luôn nổi trên nền
         for (const cell of data.cells) {
@@ -133,6 +141,33 @@ export class MazeBuilder extends Component {
             case 3: return 180;
             default: return 0;
         }
+    }
+
+    /**
+     * Chỉ dùng sprite mũi tên thẳng hướng Right rồi xoay thành 4 hướng.
+     * Không dùng các sprite arrow cong left_down/right_down.
+     */
+    private spawnFlowArrows(root: Node, data: MazeLevelData): void {
+        resources.load('sprite/2_arrow_right/spriteFrame', SpriteFrame, (error, frame) => {
+            if (error || !frame || !root?.isValid) {
+                console.error('MazeBuilder cannot load straight flow arrow.', error);
+                return;
+            }
+
+            for (const cell of data.cells) {
+                if (cell.flow === undefined) continue;
+
+                const arrow = new Node(`FlowArrow_${cell.row}_${cell.col}`);
+                arrow.layer = root.layer;
+                arrow.setPosition(this.cellPos(cell.row, cell.col));
+                arrow.setRotationFromEuler(0, 0, this.flowToAngle(cell.flow));
+
+                const transform = arrow.addComponent(UITransform);
+                transform.setContentSize(96, 50);
+                arrow.addComponent(Sprite).spriteFrame = frame;
+                root.addChild(arrow);
+            }
+        });
     }
 
     private setWallSizeRecursively(node: Node): void {
