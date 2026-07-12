@@ -1670,7 +1670,7 @@
     },
     "component": "",
     "_componentId": "e6f0addSARLIIl1zmUOIWmm",
-    "handler": "onBackToLobbyClicked",
+    "handler": "onRetryClicked",
     "customEventData": ""
   },
   {

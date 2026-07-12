@@ -29,6 +29,7 @@ import { LevelProgress } from './LevelProgress';
 import { PopupDialog } from '../UI/Dialog/PopupDialog';
 import { YouWinDialog } from '../UI/Dialog/YouWinDialog';
 import { GoalAnimator } from '../Maze/GoalAnimator';
+import { ItemValueBadge } from '../Maze/ItemValueBadge';
 const { ccclass, property } = _decorator;
 
 const CELL_SIZE = 128;
@@ -435,8 +436,31 @@ export class GameBootstrap extends Component {
                 for (const sprite of sprites) sprite.enabled = false;
             }
 
+            this.attachValueBadge(itemNode, cell.itemValue ?? 1, index);
             this.itemNodes.set(index, itemNode);
         }
+    }
+
+    /** Label "+x" nhún trên đầu item để user thấy giá trị điểm của nó. */
+    private attachValueBadge(itemNode: Node, value: number, index: number) {
+        const badge = new Node('ValueBadge');
+        badge.layer = itemNode.layer;
+        badge.setPosition(0, 84, 0);
+        badge.addComponent(UITransform).setContentSize(120, 48);
+
+        const label = badge.addComponent(Label);
+        label.string = `+${value}`;
+        label.fontSize = 40;
+        label.lineHeight = 48;
+        label.isBold = true;
+        label.color = new Color(255, 230, 55, 255);
+        label.enableOutline = true;
+        label.outlineColor = new Color(74, 42, 12, 255);
+        label.outlineWidth = 3;
+
+        itemNode.addChild(badge);
+        // Lệch pha theo index để các badge không nảy đồng loạt.
+        badge.addComponent(ItemValueBadge).configure(index * 0.073);
     }
 
     private loadPointItemFrames(onComplete: () => void) {
