@@ -101,6 +101,7 @@ export class LobbyLevelSelect extends Component {
 
         const selectableLevels = [...this.levels]
             .sort((a, b) => Number(b.data.levelId) - Number(a.data.levelId));
+        const latestUnlocked = this.getLatestUnlockedLevel()?.name;
 
         const columns = Math.max(1, Math.floor(this.levelColumns));
         const rowCount = Math.ceil(selectableLevels.length / columns);
@@ -123,12 +124,17 @@ export class LobbyLevelSelect extends Component {
             );
             this.levelContent.addChild(disc);
 
-            const newest = index === 0;
+            const unlocked = LevelProgress.isUnlocked(level.name);
+            const newest = level.name === latestUnlocked;
             const label = disc.getComponentInChildren(Label);
             if (label) {
-                label.string = `${newest ? 'Newest: ' : ''}Level ${level.data.levelId}`;
+                label.string = unlocked
+                    ? `${newest ? 'Newest: ' : ''}Level ${level.data.levelId}`
+                    : `🔒 Level ${level.data.levelId}`;
             }
-            this.bindClick(disc.getComponent(Button), () => this.openLevel(level.name));
+            const button = disc.getComponent(Button);
+            if (button) button.interactable = unlocked;
+            if (unlocked) this.bindClick(button, () => this.openLevel(level.name));
         });
     }
 

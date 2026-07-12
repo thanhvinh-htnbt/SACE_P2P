@@ -4,6 +4,8 @@ import { sys } from 'cc';
 export class LevelProgress {
     private static readonly UNLOCKED_LEVELS_KEY = 'unlocked_maze_levels';
     private static readonly SELECTED_LEVEL_KEY = 'selected_maze_level';
+    private static readonly PROGRESS_VERSION_KEY = 'maze_progress_version';
+    private static readonly PROGRESS_VERSION = 'locked_progression_v1';
     private static readonly DEFAULT_LEVEL = 'level_01';
     private static levelOrder: string[] = [];
     private static selectedLevel = LevelProgress.DEFAULT_LEVEL;
@@ -14,6 +16,7 @@ export class LevelProgress {
             .sort((a, b) => this.getLevelNumber(a) - this.getLevelNumber(b));
 
         const firstLevel = this.levelOrder[0] ?? this.DEFAULT_LEVEL;
+        this.migrateToLockedProgression(firstLevel);
         if (!this.isUnlocked(firstLevel)) this.unlockLevel(firstLevel);
     }
 
@@ -24,7 +27,7 @@ export class LevelProgress {
     static getSelectedLevel(): string {
         const savedLevel = sys.localStorage.getItem(this.SELECTED_LEVEL_KEY);
         const candidate = savedLevel ?? this.selectedLevel;
-        if (this.isAvailable(candidate)) {
+        if (this.isAvailable(candidate) && this.isUnlocked(candidate)) {
             this.selectedLevel = candidate;
             return candidate;
         }
@@ -32,7 +35,7 @@ export class LevelProgress {
     }
 
     static selectLevel(levelName: string): boolean {
-        if (!this.isAvailable(levelName)) return false;
+        if (!this.isAvailable(levelName) || !this.isUnlocked(levelName)) return false;
         this.selectedLevel = levelName;
         sys.localStorage.setItem(this.SELECTED_LEVEL_KEY, levelName);
         return true;
@@ -83,6 +86,15 @@ export class LevelProgress {
         } catch {
             return [this.levelOrder[0] ?? this.DEFAULT_LEVEL];
         }
+    }
+
+    /** One-time migration from the old build where every level could be selected. */
+    private static migrateToLockedProgression(firstLevel: string): void {
+        if (sys.localStorage.getItem(this.PROGRESS_VERSION_KEY) === this.PROGRESS_VERSION) return;
+        sys.localStorage.setItem(this.UNLOCKED_LEVELS_KEY, JSON.stringify([firstLevel]));
+        sys.localStorage.setItem(this.SELECTED_LEVEL_KEY, firstLevel);
+        sys.localStorage.setItem(this.PROGRESS_VERSION_KEY, this.PROGRESS_VERSION);
+        this.selectedLevel = firstLevel;
     }
 
     private static isAvailable(levelName: string): boolean {
